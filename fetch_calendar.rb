@@ -91,8 +91,8 @@ class GoogleCalendarFetcher
           id: event.id,
           summary: event.summary,
           description: event.description,
-          start_time: format_time_iso8601(event.start.date_time || event.start.date),
-          end_time: format_time_iso8601(event.end.date_time || event.end.date)
+          start: format_event_time(event.start),
+          end: format_event_time(event.end)
         }
       end
     }
@@ -100,10 +100,17 @@ class GoogleCalendarFetcher
     puts JSON.generate(output)
   end
 
-  def format_time_iso8601(time)
-    return time.to_s if time.is_a?(String)
+  def format_event_time(event_time)
+    {
+      date_time: format_datetime(event_time.date_time),
+      date: event_time.date
+    }
+  end
 
-    time.iso8601
+  def format_datetime(datetime)
+    return nil if datetime.nil?
+
+    datetime.iso8601
   end
 end
 

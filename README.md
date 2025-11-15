@@ -114,6 +114,8 @@ The script outputs **structured JSON format** optimized for AI agents and progra
 
 ### JSON Structure
 
+The output structure mirrors Google Calendar API's event format for consistency:
+
 ```json
 {
   "calendar": {
@@ -128,15 +130,27 @@ The script outputs **structured JSON format** optimized for AI agents and progra
       "id": "event_unique_id",
       "summary": "Team Meeting",
       "description": "Weekly team sync",
-      "start_time": "2025-01-15T10:00:00+09:00",
-      "end_time": "2025-01-15T11:00:00+09:00"
+      "start": {
+        "date_time": "2025-01-15T10:00:00+09:00",
+        "date": null
+      },
+      "end": {
+        "date_time": "2025-01-15T11:00:00+09:00",
+        "date": null
+      }
     },
     {
       "id": "event_unique_id_2",
-      "summary": "Project Review",
+      "summary": "All-day Event",
       "description": null,
-      "start_time": "2025-01-15T14:00:00+09:00",
-      "end_time": "2025-01-15T15:00:00+09:00"
+      "start": {
+        "date_time": null,
+        "date": "2025-01-15"
+      },
+      "end": {
+        "date_time": null,
+        "date": "2025-01-16"
+      }
     }
   ]
 }
@@ -154,8 +168,52 @@ The script outputs **structured JSON format** optimized for AI agents and progra
 - `id`: Unique event identifier from Google Calendar
 - `summary`: Event title
 - `description`: Event description (null if not set)
-- `start_time`: ISO 8601 timestamp with timezone
-- `end_time`: ISO 8601 timestamp with timezone
+- `start`: Event start time object
+  - `date_time`: ISO 8601 timestamp with timezone (for timed events)
+  - `date`: Date in YYYY-MM-DD format (for all-day events)
+- `end`: Event end time object
+  - `date_time`: ISO 8601 timestamp with timezone (for timed events)
+  - `date`: Date in YYYY-MM-DD format (for all-day events, **exclusive**)
+
+**Important:** For all-day events, exactly one of `date_time` or `date` will be set, the other will be `null`. The `end.date` for all-day events is **exclusive** (e.g., an all-day event on January 15 has `end.date` of "2025-01-16").
+
+### Event Type Examples
+
+**Timed Event (specific start/end times):**
+```json
+{
+  "summary": "Team Meeting",
+  "start": {"date_time": "2025-01-15T10:00:00+09:00", "date": null},
+  "end": {"date_time": "2025-01-15T11:00:00+09:00", "date": null}
+}
+```
+
+**All-day Event (single day):**
+```json
+{
+  "summary": "Holiday",
+  "start": {"date_time": null, "date": "2025-01-15"},
+  "end": {"date_time": null, "date": "2025-01-16"}
+}
+```
+
+**Multi-day All-day Event:**
+```json
+{
+  "summary": "Conference (Jan 14-16)",
+  "start": {"date_time": null, "date": "2025-01-14"},
+  "end": {"date_time": null, "date": "2025-01-17"}
+}
+```
+
+**Multi-day Timed Event:**
+```json
+{
+  "summary": "Weekend Trip",
+  "start": {"date_time": "2025-01-14T10:00:00+09:00", "date": null},
+  "end": {"date_time": "2025-01-16T18:00:00+09:00", "date": null}
+}
+```
 
 ### Processing JSON Output
 
@@ -167,6 +225,12 @@ mise exec -- ruby fetch_calendar.rb | jq
 
 # Extract event titles
 mise exec -- ruby fetch_calendar.rb | jq '.events[].summary'
+
+# Get all-day events only
+mise exec -- ruby fetch_calendar.rb | jq '.events[] | select(.start.date != null)'
+
+# Get timed events only
+mise exec -- ruby fetch_calendar.rb | jq '.events[] | select(.start.date_time != null)'
 
 # Get events count
 mise exec -- ruby fetch_calendar.rb | jq '.events | length'

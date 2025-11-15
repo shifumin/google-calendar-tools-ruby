@@ -106,13 +106,31 @@ This will:
 
 ## Usage
 
-After completing the setup, run the script with a specific date:
+After completing the setup, run the script with a date argument:
+
+### Specific Date
 
 ```bash
 mise exec -- ruby fetch_calendar.rb 2025-01-15
 ```
 
-Or run without arguments to fetch today's events:
+### Relative Dates
+
+```bash
+# Yesterday
+mise exec -- ruby fetch_calendar.rb y
+mise exec -- ruby fetch_calendar.rb yesterday
+mise exec -- ruby fetch_calendar.rb 昨日
+
+# Tomorrow
+mise exec -- ruby fetch_calendar.rb t
+mise exec -- ruby fetch_calendar.rb tomorrow
+mise exec -- ruby fetch_calendar.rb 明日
+```
+
+### Today (Default)
+
+Run without arguments to fetch today's events:
 
 ```bash
 mise exec -- ruby fetch_calendar.rb

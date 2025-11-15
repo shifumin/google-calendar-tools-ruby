@@ -142,6 +142,16 @@ if __FILE__ == $PROGRAM_NAME
   begin
     date = ARGV[0] || Date.today.to_s
 
+    # Handle special keywords for relative dates
+    date = case date.downcase
+           when 'y', 'yesterday', '昨日'
+             (Date.today - 1).to_s
+           when 't', 'tomorrow', '明日'
+             (Date.today + 1).to_s
+           else
+             date  # Pass through to Date.parse
+           end
+
     # Validate date format
     Date.parse(date)
 

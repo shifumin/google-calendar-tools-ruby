@@ -13,11 +13,20 @@ class OAuthSetup
   TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-fetcher-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
+  # OAuth認証セットアップハンドラを初期化する
+  #
+  # @raise [RuntimeError] 必要な環境変数が設定されていない場合
   def initialize
     validate_environment
     ensure_credentials_directory
   end
 
+  # Google Calendar API用のOAuth 2.0認証フローを実行する
+  #
+  # 既に認証情報が存在する場合は、認証済みであることを示すメッセージを表示する
+  # そうでない場合は、ブラウザを開いて認証コードの入力を促すOAuthフローを開始する
+  #
+  # @return [void]
   def setup
     client_id = Google::Auth::ClientId.new(
       ENV.fetch("GOOGLE_CLIENT_ID", nil),
@@ -38,6 +47,14 @@ class OAuthSetup
 
   private
 
+  # 対話型のOAuth認証フローを実行する
+  #
+  # 認証URLを含むブラウザウィンドウを開き、ユーザーに認証コードの入力を促し、
+  # 将来の使用のために認証情報を保存する
+  #
+  # @param authorizer [Google::Auth::UserAuthorizer] OAuthオーソライザインスタンス
+  # @param user_id [String] 認証情報保存用のユーザー識別子
+  # @return [void]
   def perform_authentication(authorizer, user_id)
     puts "\n=== Google Calendar OAuth 2.0 Setup ===\n\n",
          "Opening authorization URL in your browser...\n",
@@ -68,12 +85,23 @@ class OAuthSetup
          "If you want to re-authenticate, delete the token file and run this script again."
   end
 
+  # デフォルトブラウザで認証URLを開く
+  #
+  # OSを検出して適切なコマンドを使用してブラウザを開く
+  # macOS (darwin)、Linux、Windowsプラットフォームをサポート
+  #
+  # @param url [String] 開く認証URL
+  # @return [void]
   def open_browser(url)
     system("open '#{url}'") if RUBY_PLATFORM.include?("darwin")
     system("xdg-open '#{url}'") if RUBY_PLATFORM.include?("linux")
     system("start '#{url}'") if RUBY_PLATFORM.include?("mingw") || RUBY_PLATFORM.include?("mswin")
   end
 
+  # 必要な環境変数が設定されていることを検証する
+  #
+  # @raise [RuntimeError] GOOGLE_CLIENT_IDまたはGOOGLE_CLIENT_SECRETが設定されていない場合
+  # @return [void]
   def validate_environment
     raise "GOOGLE_CLIENT_ID is not set" unless ENV["GOOGLE_CLIENT_ID"]
     raise "GOOGLE_CLIENT_SECRET is not set" unless ENV["GOOGLE_CLIENT_SECRET"]

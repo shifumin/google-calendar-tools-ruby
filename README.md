@@ -1,18 +1,22 @@
 # google-calendar-fetcher-ruby
 
-A Ruby script to fetch Google Calendar events for a specific date using OAuth 2.0 authentication.
+A Ruby script to fetch Google Calendar events for a specific date using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
 
 ## Features
 
 - Fetch Google Calendar events for a specified date
+- **JSON output format** (optimized for AI agents and programmatic processing)
+- Includes calendar metadata (name, timezone, description)
+- Includes event details (summary, description, timestamps)
 - Uses Google Calendar API v3
 - OAuth 2.0 authentication (Google's recommended method)
 - Secure token-based authentication with automatic refresh
-- Environment variable-based configuration
+- Environment variable-based configuration with mise
 
 ## Prerequisites
 
 - Ruby 2.7 or higher
+- [mise](https://mise.jdx.dev/) (for environment variable management)
 - Google Cloud Project with Calendar API enabled
 - Google account with calendar access
 
@@ -51,8 +55,16 @@ bundle install
 
 ### 3. Environment Variables
 
-Set the following environment variables in your environment:
+Create a `mise.local.toml` file in the project root with your credentials:
 
+```toml
+[env]
+GOOGLE_CALENDAR_ID = "your-email@gmail.com"
+GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "your-client-secret"
+```
+
+**Environment variables:**
 - `GOOGLE_CALENDAR_ID`: Your Google Calendar ID (usually your email address)
 - `GOOGLE_CLIENT_ID`: OAuth 2.0 Client ID from Google Cloud Console
 - `GOOGLE_CLIENT_SECRET`: OAuth 2.0 Client Secret from Google Cloud Console
@@ -63,18 +75,22 @@ Set the following environment variables in your environment:
 3. Scroll down to "Integrate calendar"
 4. Copy the "Calendar ID" (usually your email address for the primary calendar)
 
+**Note:** `mise.local.toml` is already in `.gitignore` and will not be committed to version control.
+
 ### 4. Initial Authentication
 
 Run the setup script to authenticate and save your credentials:
 
 ```bash
-ruby setup_oauth.rb
+mise exec -- ruby setup_oauth.rb
 ```
 
 This will:
 1. Open your default browser with Google's authorization page
 2. Ask you to sign in and grant calendar read permission
 3. Save the refresh token to `~/.credentials/calendar-fetcher-token.yaml`
+
+**Important:** Add your email to "Test users" in the OAuth consent screen if you see an "Access blocked" error.
 
 **Note:** You only need to do this once. The token will be automatically refreshed when needed.
 
@@ -83,59 +99,113 @@ This will:
 After completing the setup, run the script with a specific date:
 
 ```bash
-ruby fetch_calendar.rb 2025-01-15
+mise exec -- ruby fetch_calendar.rb 2025-01-15
 ```
 
 Or run without arguments to fetch today's events:
 
 ```bash
-ruby fetch_calendar.rb
+mise exec -- ruby fetch_calendar.rb
 ```
 
 ## Output
 
-The script will display:
-- Event summary
-- Start time
-- End time
-- Event description (if available)
+The script outputs **structured JSON format** optimized for AI agents and programmatic processing.
 
-Example output:
+### JSON Structure
+
+```json
+{
+  "calendar": {
+    "id": "your-email@gmail.com",
+    "summary": "Calendar Name",
+    "description": "Calendar description (if set)",
+    "timezone": "Asia/Tokyo"
+  },
+  "date": "2025-01-15",
+  "events": [
+    {
+      "id": "event_unique_id",
+      "summary": "Team Meeting",
+      "description": "Weekly team sync",
+      "start_time": "2025-01-15T10:00:00+09:00",
+      "end_time": "2025-01-15T11:00:00+09:00"
+    },
+    {
+      "id": "event_unique_id_2",
+      "summary": "Project Review",
+      "description": null,
+      "start_time": "2025-01-15T14:00:00+09:00",
+      "end_time": "2025-01-15T15:00:00+09:00"
+    }
+  ]
+}
 ```
-=== Events for 2025-01-15 (2 events) ===
 
-[1] Team Meeting
-    Start: 2025-01-15 10:00
-    End:   2025-01-15 11:00
-    Description: Weekly team sync
+### Output Fields
 
-[2] Project Review
-    Start: 2025-01-15 14:00
-    End:   2025-01-15 15:00
+**Calendar metadata:**
+- `id`: Calendar identifier
+- `summary`: Calendar name (uses custom name if set via CalendarList API)
+- `description`: Calendar description (null if not set)
+- `timezone`: IANA timezone (e.g., "Asia/Tokyo")
+
+**Event details:**
+- `id`: Unique event identifier from Google Calendar
+- `summary`: Event title
+- `description`: Event description (null if not set)
+- `start_time`: ISO 8601 timestamp with timezone
+- `end_time`: ISO 8601 timestamp with timezone
+
+### Processing JSON Output
+
+You can pipe the output to `jq` for processing:
+
+```bash
+# Pretty-print JSON
+mise exec -- ruby fetch_calendar.rb | jq
+
+# Extract event titles
+mise exec -- ruby fetch_calendar.rb | jq '.events[].summary'
+
+# Get events count
+mise exec -- ruby fetch_calendar.rb | jq '.events | length'
 ```
 
 ## Troubleshooting
 
+### "Access blocked: Calendar Fetcher Ruby has not completed the Google verification process"
+Add your email address to "Test users" in the OAuth consent screen:
+1. Go to Google Cloud Console → "APIs & Services" → "OAuth consent screen"
+2. Scroll down to "Test users"
+3. Click "+ ADD USERS"
+4. Enter your email address
+5. Save and try authenticating again
+
 ### "No credentials found" error
-Run `ruby setup_oauth.rb` to authenticate first.
+Run `mise exec -- ruby setup_oauth.rb` to authenticate first.
 
 ### "Token file not found" error
-The token file should be at `~/.credentials/calendar-fetcher-token.yaml`. Run `ruby setup_oauth.rb` to create it.
+The token file should be at `~/.credentials/calendar-fetcher-token.yaml`. Run `mise exec -- ruby setup_oauth.rb` to create it.
 
 ### "Access denied" or permission errors
 1. Make sure you granted calendar read permission during OAuth setup
-2. Check that your Calendar ID is correct in `.env`
-3. Try re-authenticating by deleting `~/.credentials/calendar-fetcher-token.yaml` and running `ruby setup_oauth.rb` again
+2. Check that your Calendar ID is correct in `mise.local.toml`
+3. Try re-authenticating by deleting `~/.credentials/calendar-fetcher-token.yaml` and running `mise exec -- ruby setup_oauth.rb` again
 
 ### Browser doesn't open automatically
 Copy the URL from the terminal and paste it into your browser manually.
 
+### Environment variables not loaded
+Make sure you're using `mise exec --` prefix when running the scripts, or activate mise in your shell with `mise activate`.
+
 ## Security Notes
 
 - **Never commit** the following to version control:
-  - Environment variables with sensitive values
+  - `mise.local.toml` (contains OAuth credentials)
   - Token files in `~/.credentials/`
   - OAuth client credentials
+- `mise.local.toml` is already in `.gitignore` for your protection
 - Keep your OAuth credentials secure and rotate them if compromised
 - The refresh token allows access to your calendar without re-authentication, so protect it carefully
 
@@ -149,11 +219,24 @@ This script uses **OAuth 2.0** authentication, which is Google's recommended met
    - Google returns a refresh token that is saved locally
 
 2. **Fetching Events** (`fetch_calendar.rb`):
+   - Loads credentials from environment variables (via mise)
    - Uses the saved refresh token to get a short-lived access token
-   - Fetches calendar events using the access token
+   - Fetches calendar metadata using CalendarList API
+   - Fetches calendar events for the specified date using Events API
+   - Outputs structured JSON with calendar and event information
    - Automatically refreshes the access token when it expires
 
 This approach is more secure than service accounts for personal calendars and follows Google's best practices.
+
+## Use Cases
+
+This script is designed for:
+- **AI agents** that need to access calendar information programmatically
+- **Automation scripts** that process calendar events
+- **Data analysis** of calendar patterns
+- **Integration** with other tools and services
+
+The JSON output format makes it easy to parse and process calendar data in any programming language or AI system.
 
 ## License
 

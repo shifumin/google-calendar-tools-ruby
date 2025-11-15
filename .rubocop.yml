@@ -1,6 +1,6 @@
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.4
   Exclude:
     - 'vendor/**/*'
     - 'tmp/**/*'
@@ -18,14 +18,19 @@ Style/FrozenStringLiteralComment:
   Enabled: true
   EnforcedStyle: always
 
-# メソッド長の制限を緩和
+# 文字列リテラルはダブルクォートで統一
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: double_quotes
+
+# メソッド長の制限
 Metrics/MethodLength:
-  Max: 35
+  Max: 30
 
-# クラス長の制限を緩和
-Metrics/ClassLength:
-  Max: 150
-
-# ABC複雑度の制限を緩和
+# ABC複雑度の制限
 Metrics/AbcSize:
-  Max: 35
+  Max: 30
+
+# クラス長の制限
+Metrics/ClassLength:
+  Max: 110

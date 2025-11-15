@@ -1,0 +1,31 @@
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.7
+  Exclude:
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+
+# 行長を120文字に緩和（デフォルトは80文字）
+Layout/LineLength:
+  Max: 120
+
+# クラス/モジュールのドキュメントコメントを必須としない
+Style/Documentation:
+  Enabled: false
+
+# frozen_string_literal は既に使用しているので維持
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+
+# メソッド長の制限を緩和
+Metrics/MethodLength:
+  Max: 35
+
+# クラス長の制限を緩和
+Metrics/ClassLength:
+  Max: 150
+
+# ABC複雑度の制限を緩和
+Metrics/AbcSize:
+  Max: 35

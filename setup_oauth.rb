@@ -20,8 +20,8 @@ class OAuthSetup
 
   def setup
     client_id = Google::Auth::ClientId.new(
-      ENV['GOOGLE_CLIENT_ID'],
-      ENV['GOOGLE_CLIENT_SECRET']
+      ENV.fetch('GOOGLE_CLIENT_ID', nil),
+      ENV.fetch('GOOGLE_CLIENT_SECRET', nil)
     )
 
     token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
@@ -32,7 +32,7 @@ class OAuthSetup
     credentials = authorizer.get_credentials(user_id)
     if credentials.nil?
       puts "\n=== Google Calendar OAuth 2.0 Setup ===\n\n"
-      puts "Opening authorization URL in your browser..."
+      puts 'Opening authorization URL in your browser...'
       puts "If the browser doesn't open automatically, please copy and paste this URL:\n\n"
 
       url = authorizer.get_authorization_url(base_url: OOB_URI)
@@ -44,10 +44,10 @@ class OAuthSetup
       system("xdg-open '#{url}'") if RUBY_PLATFORM.include?('linux')
       system("start '#{url}'") if RUBY_PLATFORM.include?('mingw') || RUBY_PLATFORM.include?('mswin')
 
-      puts "After authorizing, enter the authorization code:"
+      puts 'After authorizing, enter the authorization code:'
       code = gets.chomp
 
-      credentials = authorizer.get_and_store_credentials_from_code(
+      authorizer.get_and_store_credentials_from_code(
         user_id: user_id,
         code: code,
         base_url: OOB_URI
@@ -57,7 +57,7 @@ class OAuthSetup
       puts "✓ Token saved to: #{TOKEN_PATH}"
       puts "\nYou can now run 'ruby fetch_calendar.rb' to fetch your calendar events."
     else
-      puts "✓ Already authenticated!"
+      puts '✓ Already authenticated!'
       puts "Token file: #{TOKEN_PATH}"
       puts "\nIf you want to re-authenticate, delete the token file and run this script again."
     end

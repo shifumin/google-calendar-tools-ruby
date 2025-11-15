@@ -57,3 +57,6 @@ token.yaml
 # Local documentation
 /.yardoc/
 /doc/
+
+# RuboCop
+.rubocop-*

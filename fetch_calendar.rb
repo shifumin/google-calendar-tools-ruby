@@ -48,8 +48,8 @@ class GoogleCalendarFetcher
 
   def authorize
     client_id = Google::Auth::ClientId.new(
-      ENV['GOOGLE_CLIENT_ID'],
-      ENV['GOOGLE_CLIENT_SECRET']
+      ENV.fetch('GOOGLE_CLIENT_ID', nil),
+      ENV.fetch('GOOGLE_CLIENT_SECRET', nil)
     )
 
     token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
@@ -58,9 +58,7 @@ class GoogleCalendarFetcher
     user_id = 'default'
     credentials = authorizer.get_credentials(user_id)
 
-    if credentials.nil?
-      raise "No credentials found. Please run 'ruby setup_oauth.rb' first to authenticate."
-    end
+    raise "No credentials found. Please run 'ruby setup_oauth.rb' first to authenticate." if credentials.nil?
 
     credentials
   end
@@ -149,7 +147,7 @@ if __FILE__ == $PROGRAM_NAME
            when 't', 'tomorrow', '明日'
              (Date.today + 1).to_s
            else
-             date  # Pass through to Date.parse
+             date # Pass through to Date.parse
            end
 
     # Validate date format

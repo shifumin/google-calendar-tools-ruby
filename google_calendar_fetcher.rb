@@ -75,7 +75,9 @@ class GoogleCalendarFetcher
     user_id = "default"
     credentials = authorizer.get_credentials(user_id)
 
-    raise "No credentials found. Please run 'ruby setup_oauth.rb' first to authenticate." if credentials.nil?
+    if credentials.nil?
+      raise "No credentials found. Please run 'ruby google_calendar_authenticator.rb' first to authenticate."
+    end
 
     credentials
   end
@@ -88,7 +90,10 @@ class GoogleCalendarFetcher
     raise "GOOGLE_CALENDAR_IDS or GOOGLE_CALENDAR_ID is not set" if @calendar_ids.empty?
     raise "GOOGLE_CLIENT_ID is not set" unless ENV["GOOGLE_CLIENT_ID"]
     raise "GOOGLE_CLIENT_SECRET is not set" unless ENV["GOOGLE_CLIENT_SECRET"]
-    raise "Token file not found at #{TOKEN_PATH}. Run 'ruby setup_oauth.rb' first." unless File.exist?(TOKEN_PATH)
+
+    return if File.exist?(TOKEN_PATH)
+
+    raise "Token file not found at #{TOKEN_PATH}. Run 'ruby google_calendar_authenticator.rb' first."
   end
 
   # 指定されたカレンダーのデータとイベントを取得する

@@ -77,7 +77,7 @@ class GoogleCalendarAuthenticator
     puts "\n",
          "✓ Authentication successful!\n",
          "✓ Token saved to: #{TOKEN_PATH}\n",
-         "You can now run 'ruby fetch_calendar.rb' to fetch your calendar events."
+         "You can now run 'ruby google_calendar_fetcher.rb' to fetch your calendar events."
   end
 
   def show_already_authenticated_message

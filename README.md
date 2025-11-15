@@ -111,21 +111,21 @@ After completing the setup, run the script with a date argument:
 ### Specific Date
 
 ```bash
-mise exec -- ruby fetch_calendar.rb 2025-01-15
+mise exec -- ruby google_calendar_fetcher.rb 2025-01-15
 ```
 
 ### Relative Dates
 
 ```bash
 # Yesterday
-mise exec -- ruby fetch_calendar.rb y
-mise exec -- ruby fetch_calendar.rb yesterday
-mise exec -- ruby fetch_calendar.rb 昨日
+mise exec -- ruby google_calendar_fetcher.rb y
+mise exec -- ruby google_calendar_fetcher.rb yesterday
+mise exec -- ruby google_calendar_fetcher.rb 昨日
 
 # Tomorrow
-mise exec -- ruby fetch_calendar.rb t
-mise exec -- ruby fetch_calendar.rb tomorrow
-mise exec -- ruby fetch_calendar.rb 明日
+mise exec -- ruby google_calendar_fetcher.rb t
+mise exec -- ruby google_calendar_fetcher.rb tomorrow
+mise exec -- ruby google_calendar_fetcher.rb 明日
 ```
 
 ### Today (Default)
@@ -133,7 +133,7 @@ mise exec -- ruby fetch_calendar.rb 明日
 Run without arguments to fetch today's events:
 
 ```bash
-mise exec -- ruby fetch_calendar.rb
+mise exec -- ruby google_calendar_fetcher.rb
 ```
 
 ## Output
@@ -268,28 +268,28 @@ You can pipe the output to `jq` for processing:
 
 ```bash
 # Pretty-print JSON
-mise exec -- ruby fetch_calendar.rb | jq
+mise exec -- ruby google_calendar_fetcher.rb | jq
 
 # Get all events from all calendars
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[]'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[]'
 
 # Extract event titles from all calendars
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[].summary'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[].summary'
 
 # Get events from a specific calendar
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[] | select(.id == "your-email@gmail.com") | .events'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[] | select(.id == "your-email@gmail.com") | .events'
 
 # Get all-day events only
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[] | select(.start.date != null)'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date != null)'
 
 # Get timed events only
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[] | select(.start.date_time != null)'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date_time != null)'
 
 # Count total events across all calendars
-mise exec -- ruby fetch_calendar.rb | jq '[.calendars[].events[]] | length'
+mise exec -- ruby google_calendar_fetcher.rb | jq '[.calendars[].events[]] | length'
 
 # Count events per calendar
-mise exec -- ruby fetch_calendar.rb | jq '.calendars[] | {calendar: .summary, count: (.events | length)}'
+mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[] | {calendar: .summary, count: (.events | length)}'
 ```
 
 ## Troubleshooting
@@ -338,7 +338,7 @@ This script uses **OAuth 2.0** authentication, which is Google's recommended met
    - You grant permission for the app to read your calendar
    - Google returns a refresh token that is saved locally
 
-2. **Fetching Events** (`fetch_calendar.rb`):
+2. **Fetching Events** (`google_calendar_fetcher.rb`):
    - Loads credentials from environment variables (via mise)
    - Uses the saved refresh token to get a short-lived access token
    - Fetches calendar metadata using CalendarList API

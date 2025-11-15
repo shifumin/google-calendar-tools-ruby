@@ -90,10 +90,7 @@ class GoogleCalendarFetcher
     raise "GOOGLE_CALENDAR_IDS or GOOGLE_CALENDAR_ID is not set" if @calendar_ids.empty?
     raise "GOOGLE_CLIENT_ID is not set" unless ENV["GOOGLE_CLIENT_ID"]
     raise "GOOGLE_CLIENT_SECRET is not set" unless ENV["GOOGLE_CLIENT_SECRET"]
-
-    return if File.exist?(TOKEN_PATH)
-
-    raise "Token file not found at #{TOKEN_PATH}. Run 'ruby google_calendar_authenticator.rb' first."
+    raise "Token file not found. Run 'ruby google_calendar_authenticator.rb' first." unless File.exist?(TOKEN_PATH)
   end
 
   # 指定されたカレンダーのデータとイベントを取得する

@@ -16,11 +16,18 @@
 .env.local
 .env.*.local
 
+# mise - Local environment configuration
+mise.local.toml
+
 # Google Credentials
 credentials.json
 token.yaml
 *.json
 !.vscode/*.json
+
+# OAuth 2.0 token storage (stored in home directory, but listed here for clarity)
+# Note: Tokens are stored at ~/.credentials/calendar-fetcher-token.yaml
+.credentials/
 
 # Ignore bundler config
 /.bundle

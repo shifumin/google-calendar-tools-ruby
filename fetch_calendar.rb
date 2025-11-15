@@ -20,6 +20,7 @@ class GoogleCalendarFetcher
     @calendar_id = ENV['GOOGLE_CALENDAR_ID']
 
     validate_configuration
+    @calendar_info = fetch_calendar_info
   end
 
   def fetch_events(date)
@@ -66,13 +67,30 @@ class GoogleCalendarFetcher
     raise "Token file not found at #{TOKEN_PATH}. Run 'ruby setup_oauth.rb' first." unless File.exist?(TOKEN_PATH)
   end
 
+  def fetch_calendar_info
+    # Use CalendarList API to get user's custom calendar name
+    calendar_list_entry = @service.get_calendar_list(@calendar_id)
+
+    # Use summaryOverride if set, otherwise fall back to summary
+    calendar_name = calendar_list_entry.summary_override || calendar_list_entry.summary
+
+    {
+      id: calendar_list_entry.id,
+      summary: calendar_name,
+      description: calendar_list_entry.description,
+      timezone: calendar_list_entry.time_zone
+    }
+  end
+
   def display_events(events, date)
     output = {
+      calendar: @calendar_info,
       date: date,
       events: events.map do |event|
         {
           id: event.id,
           summary: event.summary,
+          description: event.description,
           start_time: format_time_iso8601(event.start.date_time || event.start.date),
           end_time: format_time_iso8601(event.end.date_time || event.end.date)
         }

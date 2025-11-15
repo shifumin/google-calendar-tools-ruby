@@ -31,13 +31,12 @@ class OAuthSetup
 
     credentials = authorizer.get_credentials(user_id)
     if credentials.nil?
-      puts "\n=== Google Calendar OAuth 2.0 Setup ===\n\n"
-      puts 'Opening authorization URL in your browser...'
-      puts "If the browser doesn't open automatically, please copy and paste this URL:\n\n"
+      puts "\n=== Google Calendar OAuth 2.0 Setup ===\n\n",
+           'Opening authorization URL in your browser...',
+           "If the browser doesn't open automatically, please copy and paste this URL:\n"
 
       url = authorizer.get_authorization_url(base_url: OOB_URI)
-      puts url
-      puts "\n"
+      puts url, "\n"
 
       # Try to open URL in default browser
       system("open '#{url}'") if RUBY_PLATFORM.include?('darwin')
@@ -53,13 +52,13 @@ class OAuthSetup
         base_url: OOB_URI
       )
 
-      puts "\n✓ Authentication successful!"
-      puts "✓ Token saved to: #{TOKEN_PATH}"
-      puts "\nYou can now run 'ruby fetch_calendar.rb' to fetch your calendar events."
+      puts "\n✓ Authentication successful!",
+           "✓ Token saved to: #{TOKEN_PATH}",
+           "\nYou can now run 'ruby fetch_calendar.rb' to fetch your calendar events."
     else
-      puts '✓ Already authenticated!'
-      puts "Token file: #{TOKEN_PATH}"
-      puts "\nIf you want to re-authenticate, delete the token file and run this script again."
+      puts '✓ Already authenticated!',
+           "Token file: #{TOKEN_PATH}",
+           "\nIf you want to re-authenticate, delete the token file and run this script again."
     end
   end
 

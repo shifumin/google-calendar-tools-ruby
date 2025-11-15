@@ -17,29 +17,34 @@ class GoogleCalendarFetcher
     @service = Google::Apis::CalendarV3::CalendarService.new
     @service.client_options.application_name = APPLICATION_NAME
     @service.authorization = authorize
-    @calendar_id = ENV['GOOGLE_CALENDAR_ID']
+    @calendar_ids = parse_calendar_ids
 
     validate_configuration
-    @calendar_info = fetch_calendar_info
   end
 
   def fetch_events(date)
     time_min = DateTime.parse("#{date}T00:00:00+09:00").rfc3339
     time_max = DateTime.parse("#{date}T23:59:59+09:00").rfc3339
 
-    response = @service.list_events(
-      @calendar_id,
-      max_results: 100,
-      single_events: true,
-      order_by: 'startTime',
-      time_min: time_min,
-      time_max: time_max
-    )
+    calendars_data = @calendar_ids.map do |calendar_id|
+      fetch_calendar_data(calendar_id, time_min, time_max)
+    end
 
-    display_events(response.items, date)
+    display_events(calendars_data, date)
   end
 
   private
+
+  def parse_calendar_ids
+    # Support both GOOGLE_CALENDAR_IDS (comma-separated) and GOOGLE_CALENDAR_ID (single, for backward compatibility)
+    if ENV['GOOGLE_CALENDAR_IDS']
+      ENV['GOOGLE_CALENDAR_IDS'].split(',').map(&:strip)
+    elsif ENV['GOOGLE_CALENDAR_ID']
+      [ENV['GOOGLE_CALENDAR_ID']]
+    else
+      []
+    end
+  end
 
   def authorize
     client_id = Google::Auth::ClientId.new(
@@ -61,32 +66,33 @@ class GoogleCalendarFetcher
   end
 
   def validate_configuration
-    raise 'GOOGLE_CALENDAR_ID is not set' unless @calendar_id
+    raise 'GOOGLE_CALENDAR_IDS or GOOGLE_CALENDAR_ID is not set' if @calendar_ids.empty?
     raise 'GOOGLE_CLIENT_ID is not set' unless ENV['GOOGLE_CLIENT_ID']
     raise 'GOOGLE_CLIENT_SECRET is not set' unless ENV['GOOGLE_CLIENT_SECRET']
     raise "Token file not found at #{TOKEN_PATH}. Run 'ruby setup_oauth.rb' first." unless File.exist?(TOKEN_PATH)
   end
 
-  def fetch_calendar_info
-    # Use CalendarList API to get user's custom calendar name
-    calendar_list_entry = @service.get_calendar_list(@calendar_id)
-
-    # Use summaryOverride if set, otherwise fall back to summary
+  def fetch_calendar_data(calendar_id, time_min, time_max)
+    # Fetch calendar info
+    calendar_list_entry = @service.get_calendar_list(calendar_id)
     calendar_name = calendar_list_entry.summary_override || calendar_list_entry.summary
+
+    # Fetch events
+    response = @service.list_events(
+      calendar_id,
+      max_results: 100,
+      single_events: true,
+      order_by: 'startTime',
+      time_min: time_min,
+      time_max: time_max
+    )
 
     {
       id: calendar_list_entry.id,
       summary: calendar_name,
       description: calendar_list_entry.description,
-      timezone: calendar_list_entry.time_zone
-    }
-  end
-
-  def display_events(events, date)
-    output = {
-      calendar: @calendar_info,
-      date: date,
-      events: events.map do |event|
+      timezone: calendar_list_entry.time_zone,
+      events: response.items.map do |event|
         {
           id: event.id,
           summary: event.summary,
@@ -95,6 +101,23 @@ class GoogleCalendarFetcher
           end: format_event_time(event.end)
         }
       end
+    }
+  rescue StandardError => e
+    # Return error info if calendar fetch fails
+    {
+      id: calendar_id,
+      summary: nil,
+      description: nil,
+      timezone: nil,
+      error: e.message,
+      events: []
+    }
+  end
+
+  def display_events(calendars_data, date)
+    output = {
+      date: date,
+      calendars: calendars_data
     }
 
     puts JSON.generate(output)

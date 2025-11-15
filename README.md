@@ -57,6 +57,15 @@ bundle install
 
 Create a `mise.local.toml` file in the project root with your credentials:
 
+**Multiple calendars (comma-separated):**
+```toml
+[env]
+GOOGLE_CALENDAR_IDS = "your-email@gmail.com,work-calendar@example.com,another@gmail.com"
+GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "your-client-secret"
+```
+
+**Single calendar (backward compatibility):**
 ```toml
 [env]
 GOOGLE_CALENDAR_ID = "your-email@gmail.com"
@@ -65,7 +74,8 @@ GOOGLE_CLIENT_SECRET = "your-client-secret"
 ```
 
 **Environment variables:**
-- `GOOGLE_CALENDAR_ID`: Your Google Calendar ID (usually your email address)
+- `GOOGLE_CALENDAR_IDS`: Multiple calendar IDs, comma-separated (e.g., "cal1@gmail.com,cal2@gmail.com")
+- `GOOGLE_CALENDAR_ID`: Single calendar ID (for backward compatibility)
 - `GOOGLE_CLIENT_ID`: OAuth 2.0 Client ID from Google Cloud Console
 - `GOOGLE_CLIENT_SECRET`: OAuth 2.0 Client Secret from Google Cloud Console
 
@@ -114,43 +124,53 @@ The script outputs **structured JSON format** optimized for AI agents and progra
 
 ### JSON Structure
 
-The output structure mirrors Google Calendar API's event format for consistency:
+The output structure mirrors Google Calendar API's event format for consistency. When multiple calendars are configured, events are grouped by calendar:
 
 ```json
 {
-  "calendar": {
-    "id": "your-email@gmail.com",
-    "summary": "Calendar Name",
-    "description": "Calendar description (if set)",
-    "timezone": "Asia/Tokyo"
-  },
   "date": "2025-01-15",
-  "events": [
+  "calendars": [
     {
-      "id": "event_unique_id",
-      "summary": "Team Meeting",
-      "description": "Weekly team sync",
-      "start": {
-        "date_time": "2025-01-15T10:00:00+09:00",
-        "date": null
-      },
-      "end": {
-        "date_time": "2025-01-15T11:00:00+09:00",
-        "date": null
-      }
+      "id": "your-email@gmail.com",
+      "summary": "Primary Calendar",
+      "description": "Calendar description (if set)",
+      "timezone": "Asia/Tokyo",
+      "events": [
+        {
+          "id": "event_unique_id",
+          "summary": "Team Meeting",
+          "description": "Weekly team sync",
+          "start": {
+            "date_time": "2025-01-15T10:00:00+09:00",
+            "date": null
+          },
+          "end": {
+            "date_time": "2025-01-15T11:00:00+09:00",
+            "date": null
+          }
+        }
+      ]
     },
     {
-      "id": "event_unique_id_2",
-      "summary": "All-day Event",
+      "id": "work@example.com",
+      "summary": "Work Calendar",
       "description": null,
-      "start": {
-        "date_time": null,
-        "date": "2025-01-15"
-      },
-      "end": {
-        "date_time": null,
-        "date": "2025-01-16"
-      }
+      "timezone": "Asia/Tokyo",
+      "events": [
+        {
+          "id": "event_unique_id_2",
+          "summary": "All-day Event",
+          "description": null,
+          "start": {
+            "date_time": null,
+            "date": "2025-01-15"
+          },
+          "end": {
+            "date_time": null,
+            "date": "2025-01-16"
+          }
+        }
+      ]
     }
   ]
 }
@@ -158,13 +178,19 @@ The output structure mirrors Google Calendar API's event format for consistency:
 
 ### Output Fields
 
-**Calendar metadata:**
+**Top-level fields:**
+- `date`: The date for which events were fetched (YYYY-MM-DD format)
+- `calendars`: Array of calendar objects with their events
+
+**Calendar metadata (per calendar):**
 - `id`: Calendar identifier
 - `summary`: Calendar name (uses custom name if set via CalendarList API)
 - `description`: Calendar description (null if not set)
 - `timezone`: IANA timezone (e.g., "Asia/Tokyo")
+- `events`: Array of events for this calendar
+- `error`: Error message if calendar fetch failed (only present on error)
 
-**Event details:**
+**Event details (per event):**
 - `id`: Unique event identifier from Google Calendar
 - `summary`: Event title
 - `description`: Event description (null if not set)
@@ -175,7 +201,10 @@ The output structure mirrors Google Calendar API's event format for consistency:
   - `date_time`: ISO 8601 timestamp with timezone (for timed events)
   - `date`: Date in YYYY-MM-DD format (for all-day events, **exclusive**)
 
-**Important:** For all-day events, exactly one of `date_time` or `date` will be set, the other will be `null`. The `end.date` for all-day events is **exclusive** (e.g., an all-day event on January 15 has `end.date` of "2025-01-16").
+**Important:**
+- For all-day events, exactly one of `date_time` or `date` will be set, the other will be `null`.
+- The `end.date` for all-day events is **exclusive** (e.g., an all-day event on January 15 has `end.date` of "2025-01-16").
+- Events are grouped by calendar and sorted chronologically within each calendar.
 
 ### Event Type Examples
 
@@ -223,17 +252,26 @@ You can pipe the output to `jq` for processing:
 # Pretty-print JSON
 mise exec -- ruby fetch_calendar.rb | jq
 
-# Extract event titles
-mise exec -- ruby fetch_calendar.rb | jq '.events[].summary'
+# Get all events from all calendars
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[]'
+
+# Extract event titles from all calendars
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[].summary'
+
+# Get events from a specific calendar
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[] | select(.id == "your-email@gmail.com") | .events'
 
 # Get all-day events only
-mise exec -- ruby fetch_calendar.rb | jq '.events[] | select(.start.date != null)'
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[] | select(.start.date != null)'
 
 # Get timed events only
-mise exec -- ruby fetch_calendar.rb | jq '.events[] | select(.start.date_time != null)'
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[].events[] | select(.start.date_time != null)'
 
-# Get events count
-mise exec -- ruby fetch_calendar.rb | jq '.events | length'
+# Count total events across all calendars
+mise exec -- ruby fetch_calendar.rb | jq '[.calendars[].events[]] | length'
+
+# Count events per calendar
+mise exec -- ruby fetch_calendar.rb | jq '.calendars[] | {calendar: .summary, count: (.events | length)}'
 ```
 
 ## Troubleshooting

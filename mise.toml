@@ -1,4 +1,8 @@
 [env]
-GOOGLE_CALENDAR_ID = ""
+# Multiple calendars (comma-separated)
+GOOGLE_CALENDAR_IDS = "your-email@gmail.com,another-calendar@example.com"
+# Or single calendar (backward compatibility)
+# GOOGLE_CALENDAR_ID = "your-email@gmail.com"
+
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""

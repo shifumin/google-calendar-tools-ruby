@@ -10,7 +10,6 @@ require 'fileutils'
 class OAuthSetup
   OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
   APPLICATION_NAME = 'Google Calendar Fetcher'
-  CREDENTIALS_PATH = File.join(Dir.home, '.credentials', 'calendar-fetcher-credentials.json')
   TOKEN_PATH = File.join(Dir.home, '.credentials', 'calendar-fetcher-token.yaml')
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
@@ -67,8 +66,8 @@ class OAuthSetup
   private
 
   def validate_environment
-    raise 'GOOGLE_CLIENT_ID is not set in .env' unless ENV['GOOGLE_CLIENT_ID']
-    raise 'GOOGLE_CLIENT_SECRET is not set in .env' unless ENV['GOOGLE_CLIENT_SECRET']
+    raise 'GOOGLE_CLIENT_ID is not set' unless ENV['GOOGLE_CLIENT_ID']
+    raise 'GOOGLE_CLIENT_SECRET is not set' unless ENV['GOOGLE_CLIENT_SECRET']
   end
 
   def ensure_credentials_directory

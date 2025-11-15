@@ -3,12 +3,14 @@
 
 require 'google/apis/calendar_v3'
 require 'googleauth'
-require 'dotenv/load'
+require 'googleauth/stores/file_token_store'
 require 'date'
+require 'json'
 
 # GoogleCalendarFetcher fetches events from Google Calendar for a specified date
 class GoogleCalendarFetcher
   APPLICATION_NAME = 'Google Calendar Fetcher'
+  TOKEN_PATH = File.join(Dir.home, '.credentials', 'calendar-fetcher-token.yaml')
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
   def initialize
@@ -39,44 +41,51 @@ class GoogleCalendarFetcher
   private
 
   def authorize
-    authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: File.open(ENV['GOOGLE_APPLICATION_CREDENTIALS']),
-      scope: SCOPE
+    client_id = Google::Auth::ClientId.new(
+      ENV['GOOGLE_CLIENT_ID'],
+      ENV['GOOGLE_CLIENT_SECRET']
     )
-    authorizer.fetch_access_token!
-    authorizer
+
+    token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
+    authorizer = Google::Auth::UserAuthorizer.new(client_id, SCOPE, token_store)
+
+    user_id = 'default'
+    credentials = authorizer.get_credentials(user_id)
+
+    if credentials.nil?
+      raise "No credentials found. Please run 'ruby setup_oauth.rb' first to authenticate."
+    end
+
+    credentials
   end
 
   def validate_configuration
     raise 'GOOGLE_CALENDAR_ID is not set' unless @calendar_id
-    raise 'GOOGLE_APPLICATION_CREDENTIALS is not set' unless ENV['GOOGLE_APPLICATION_CREDENTIALS']
-    raise 'Credentials file not found' unless File.exist?(ENV['GOOGLE_APPLICATION_CREDENTIALS'])
+    raise 'GOOGLE_CLIENT_ID is not set' unless ENV['GOOGLE_CLIENT_ID']
+    raise 'GOOGLE_CLIENT_SECRET is not set' unless ENV['GOOGLE_CLIENT_SECRET']
+    raise "Token file not found at #{TOKEN_PATH}. Run 'ruby setup_oauth.rb' first." unless File.exist?(TOKEN_PATH)
   end
 
   def display_events(events, date)
-    if events.empty?
-      puts "No events found for #{date}"
-      return
-    end
+    output = {
+      date: date,
+      events: events.map do |event|
+        {
+          id: event.id,
+          summary: event.summary,
+          start_time: format_time_iso8601(event.start.date_time || event.start.date),
+          end_time: format_time_iso8601(event.end.date_time || event.end.date)
+        }
+      end
+    }
 
-    puts "\n=== Events for #{date} (#{events.size} events) ===\n\n"
-
-    events.each_with_index do |event, index|
-      start_time = event.start.date_time || event.start.date
-      end_time = event.end.date_time || event.end.date
-
-      puts "[#{index + 1}] #{event.summary}"
-      puts "    Start: #{format_time(start_time)}"
-      puts "    End:   #{format_time(end_time)}"
-      puts "    Description: #{event.description}" if event.description
-      puts
-    end
+    puts JSON.generate(output)
   end
 
-  def format_time(time)
-    return time if time.is_a?(String)
+  def format_time_iso8601(time)
+    return time.to_s if time.is_a?(String)
 
-    time.strftime('%Y-%m-%d %H:%M')
+    time.iso8601
   end
 end
 
@@ -91,11 +100,10 @@ if __FILE__ == $PROGRAM_NAME
     fetcher = GoogleCalendarFetcher.new
     fetcher.fetch_events(date)
   rescue Date::Error
-    puts "Error: Invalid date format. Please use YYYY-MM-DD format."
-    puts "Usage: ruby fetch_calendar.rb [YYYY-MM-DD]"
+    puts JSON.generate({ error: 'Invalid date format. Please use YYYY-MM-DD format.' })
     exit 1
   rescue StandardError => e
-    puts "Error: #{e.message}"
+    puts JSON.generate({ error: e.message })
     exit 1
   end
 end

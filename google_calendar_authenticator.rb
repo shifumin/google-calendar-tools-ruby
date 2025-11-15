@@ -6,14 +6,14 @@ require "googleauth"
 require "googleauth/stores/file_token_store"
 require "fileutils"
 
-# OAuthSetup handles the initial OAuth 2.0 authentication flow
-class OAuthSetup
+# GoogleCalendarAuthenticator handles the OAuth 2.0 authentication flow for Google Calendar API
+class GoogleCalendarAuthenticator
   OOB_URI = "urn:ietf:wg:oauth:2.0:oob"
   APPLICATION_NAME = "Google Calendar Fetcher"
   TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-fetcher-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
-  # OAuth認証セットアップハンドラを初期化する
+  # Google Calendar認証器を初期化する
   #
   # @raise [RuntimeError] 必要な環境変数が設定されていない場合
   def initialize
@@ -21,13 +21,13 @@ class OAuthSetup
     ensure_credentials_directory
   end
 
-  # Google Calendar API用のOAuth 2.0認証フローを実行する
+  # Google Calendar API用のOAuth 2.0認証を実行する
   #
   # 既に認証情報が存在する場合は、認証済みであることを示すメッセージを表示する
   # そうでない場合は、ブラウザを開いて認証コードの入力を促すOAuthフローを開始する
   #
   # @return [void]
-  def setup
+  def authenticate
     client_id = Google::Auth::ClientId.new(
       ENV.fetch("GOOGLE_CLIENT_ID", nil),
       ENV.fetch("GOOGLE_CLIENT_SECRET", nil)
@@ -56,12 +56,12 @@ class OAuthSetup
   # @param user_id [String] 認証情報保存用のユーザー識別子
   # @return [void]
   def perform_authentication(authorizer, user_id)
-    puts "\n=== Google Calendar OAuth 2.0 Setup ===\n\n",
+    puts "=== Google Calendar OAuth 2.0 Setup ===\n",
          "Opening authorization URL in your browser...\n",
          "If the browser doesn't open automatically, please copy and paste this URL:"
 
     url = authorizer.get_authorization_url(base_url: OOB_URI)
-    puts url, ""
+    puts url, "\n"
 
     open_browser(url)
 
@@ -74,7 +74,8 @@ class OAuthSetup
       base_url: OOB_URI
     )
 
-    puts "\n✓ Authentication successful!\n",
+    puts "\n",
+         "✓ Authentication successful!\n",
          "✓ Token saved to: #{TOKEN_PATH}\n",
          "You can now run 'ruby fetch_calendar.rb' to fetch your calendar events."
   end
@@ -93,9 +94,14 @@ class OAuthSetup
   # @param url [String] 開く認証URL
   # @return [void]
   def open_browser(url)
-    system("open '#{url}'") if RUBY_PLATFORM.include?("darwin")
-    system("xdg-open '#{url}'") if RUBY_PLATFORM.include?("linux")
-    system("start '#{url}'") if RUBY_PLATFORM.include?("mingw") || RUBY_PLATFORM.include?("mswin")
+    case RUBY_PLATFORM
+    when /darwin/
+      system("open '#{url}'")
+    when /linux/
+      system("xdg-open '#{url}'")
+    when /mingw|mswin/
+      system("start '#{url}'")
+    end
   end
 
   # 必要な環境変数が設定されていることを検証する
@@ -116,8 +122,8 @@ end
 # Main execution
 if __FILE__ == $PROGRAM_NAME
   begin
-    setup = OAuthSetup.new
-    setup.setup
+    authenticator = GoogleCalendarAuthenticator.new
+    authenticator.authenticate
   rescue StandardError => e
     puts "Error: #{e.message}"
     exit 1

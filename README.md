@@ -89,10 +89,10 @@ GOOGLE_CLIENT_SECRET = "your-client-secret"
 
 ### 4. Initial Authentication
 
-Run the setup script to authenticate and save your credentials:
+Run the authentication script to authenticate and save your credentials:
 
 ```bash
-mise exec -- ruby setup_oauth.rb
+mise exec -- ruby google_calendar_authenticator.rb
 ```
 
 This will:
@@ -303,15 +303,15 @@ Add your email address to "Test users" in the OAuth consent screen:
 5. Save and try authenticating again
 
 ### "No credentials found" error
-Run `mise exec -- ruby setup_oauth.rb` to authenticate first.
+Run `mise exec -- ruby google_calendar_authenticator.rb` to authenticate first.
 
 ### "Token file not found" error
-The token file should be at `~/.credentials/calendar-fetcher-token.yaml`. Run `mise exec -- ruby setup_oauth.rb` to create it.
+The token file should be at `~/.credentials/calendar-fetcher-token.yaml`. Run `mise exec -- ruby google_calendar_authenticator.rb` to create it.
 
 ### "Access denied" or permission errors
 1. Make sure you granted calendar read permission during OAuth setup
 2. Check that your Calendar ID is correct in `mise.local.toml`
-3. Try re-authenticating by deleting `~/.credentials/calendar-fetcher-token.yaml` and running `mise exec -- ruby setup_oauth.rb` again
+3. Try re-authenticating by deleting `~/.credentials/calendar-fetcher-token.yaml` and running `mise exec -- ruby google_calendar_authenticator.rb` again
 
 ### Browser doesn't open automatically
 Copy the URL from the terminal and paste it into your browser manually.
@@ -333,7 +333,7 @@ Make sure you're using `mise exec --` prefix when running the scripts, or activa
 
 This script uses **OAuth 2.0** authentication, which is Google's recommended method for accessing user data:
 
-1. **Initial Setup** (`setup_oauth.rb`):
+1. **Initial Setup** (`google_calendar_authenticator.rb`):
    - Opens Google's authorization page in your browser
    - You grant permission for the app to read your calendar
    - Google returns a refresh token that is saved locally

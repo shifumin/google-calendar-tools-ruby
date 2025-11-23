@@ -6,6 +6,7 @@ require "googleauth"
 require "googleauth/stores/file_token_store"
 require "date"
 require "json"
+require "optparse"
 
 # GoogleCalendarCreator creates events in Google Calendar
 class GoogleCalendarCreator
@@ -15,13 +16,14 @@ class GoogleCalendarCreator
 
   # Google Calendarイベント作成クラスを初期化する
   #
+  # @param calendar_id [String, nil] カレンダーID（nilの場合は環境変数から取得）
   # @raise [RuntimeError] 必要な環境変数が設定されていない場合
   # @raise [RuntimeError] 認証トークンファイルが見つからない場合
-  def initialize
+  def initialize(calendar_id: nil)
     @service = Google::Apis::CalendarV3::CalendarService.new
     @service.client_options.application_name = APPLICATION_NAME
     @service.authorization = authorize
-    @calendar_id = ENV.fetch("GOOGLE_CALENDAR_ID", nil)
+    @calendar_id = resolve_calendar_id(calendar_id)
 
     validate_configuration
   end
@@ -40,6 +42,25 @@ class GoogleCalendarCreator
   end
 
   private
+
+  # カレンダーIDを決定する
+  #
+  # 優先順位:
+  # 1. 引数で指定されたID
+  # 2. GOOGLE_CALENDAR_ID環境変数
+  # 3. GOOGLE_CALENDAR_IDS環境変数の最初の値
+  #
+  # @param calendar_id [String, nil] 引数で指定されたカレンダーID
+  # @return [String, nil] 決定されたカレンダーID
+  def resolve_calendar_id(calendar_id)
+    return calendar_id if calendar_id
+
+    if ENV["GOOGLE_CALENDAR_ID"]
+      ENV["GOOGLE_CALENDAR_ID"]
+    elsif ENV["GOOGLE_CALENDAR_IDS"]
+      ENV["GOOGLE_CALENDAR_IDS"].split(",").first&.strip
+    end
+  end
 
   # OAuth 2.0認証を実行して認証情報を取得する
   #
@@ -67,7 +88,7 @@ class GoogleCalendarCreator
   # @raise [RuntimeError] 必要な環境変数が設定されていない場合
   # @raise [RuntimeError] トークンファイルが見つからない場合
   def validate_configuration
-    raise "GOOGLE_CALENDAR_ID is not set" unless @calendar_id
+    raise "Calendar ID is not set. Use --calendar option or set GOOGLE_CALENDAR_ID" unless @calendar_id
     raise "GOOGLE_CLIENT_ID is not set" unless ENV["GOOGLE_CLIENT_ID"]
     raise "GOOGLE_CLIENT_SECRET is not set" unless ENV["GOOGLE_CLIENT_SECRET"]
     return if File.exist?(TOKEN_PATH)
@@ -91,9 +112,39 @@ class GoogleCalendarCreator
 
   # イベント日時オブジェクトを構築する
   #
-  # @param time_str [String] 日時文字列
+  # YYYY-MM-DD形式の場合は終日イベント、YYYY-MM-DDTHH:MM:SS形式の場合は時刻指定イベントとして処理
+  #
+  # @param time_str [String] 日付または日時文字列
   # @return [Google::Apis::CalendarV3::EventDateTime] イベント日時オブジェクト
   def build_event_datetime(time_str)
+    if all_day_format?(time_str)
+      build_all_day_datetime(time_str)
+    else
+      build_timed_datetime(time_str)
+    end
+  end
+
+  # 終日イベント形式（YYYY-MM-DD）かどうかを判定する
+  #
+  # @param time_str [String] 日付または日時文字列
+  # @return [Boolean] 終日イベント形式の場合はtrue
+  def all_day_format?(time_str)
+    time_str.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+  end
+
+  # 終日イベント用のEventDateTimeを構築する
+  #
+  # @param date_str [String] 日付文字列（YYYY-MM-DD形式）
+  # @return [Google::Apis::CalendarV3::EventDateTime] イベント日時オブジェクト
+  def build_all_day_datetime(date_str)
+    Google::Apis::CalendarV3::EventDateTime.new(date: date_str)
+  end
+
+  # 時刻指定イベント用のEventDateTimeを構築する
+  #
+  # @param time_str [String] 日時文字列
+  # @return [Google::Apis::CalendarV3::EventDateTime] イベント日時オブジェクト
+  def build_timed_datetime(time_str)
     datetime = DateTime.parse(time_str)
     # タイムゾーンが指定されていない場合はJSTを付与
     datetime = DateTime.parse("#{time_str}+09:00") unless time_str.match?(/[+-]\d{2}:\d{2}|Z$/)
@@ -135,24 +186,91 @@ class GoogleCalendarCreator
   end
 end
 
+# コマンドライン引数を解析する
+#
+# @return [Hash] 解析されたオプション
+def parse_options
+  options = {}
+  parser = build_option_parser(options)
+  parser.parse!
+  validate_required_options(options, parser)
+  options
+end
+
+# OptionParserを構築する
+#
+# @param options [Hash] オプションを格納するハッシュ
+# @return [OptionParser] 構築されたパーサー
+def build_option_parser(options)
+  OptionParser.new do |opts|
+    opts.banner = "Usage: ruby google_calendar_creator.rb [options]"
+    define_required_options(opts, options)
+    define_optional_options(opts, options)
+    define_examples(opts)
+  end
+end
+
+# 必須オプションを定義する
+def define_required_options(opts, options)
+  opts.separator ""
+  opts.separator "Required options:"
+
+  opts.on("--summary=SUMMARY", "Event title (required)") { |v| options[:summary] = v }
+  opts.on("--start=DATETIME", "Start datetime, e.g., '2025-11-24T10:00:00' (required)") { |v| options[:start_time] = v }
+  opts.on("--end=DATETIME", "End datetime, e.g., '2025-11-24T11:00:00' (required)") { |v| options[:end_time] = v }
+end
+
+# オプション項目を定義する
+def define_optional_options(opts, options)
+  opts.separator ""
+  opts.separator "Optional:"
+
+  opts.on("--calendar=CALENDAR_ID", "Calendar ID (default: GOOGLE_CALENDAR_ID env var)") do |v|
+    options[:calendar_id] = v
+  end
+end
+
+# 使用例を定義する
+def define_examples(opts)
+  opts.separator ""
+  opts.separator "Examples:"
+  opts.separator "  ruby google_calendar_creator.rb \\"
+  opts.separator "    --summary='Meeting' --start='2025-11-24T10:00:00' --end='2025-11-24T11:00:00'"
+  opts.separator ""
+  opts.separator "  ruby google_calendar_creator.rb \\"
+  opts.separator "    --summary='Meeting' --start='2025-11-24T10:00:00' --end='2025-11-24T11:00:00' \\"
+  opts.separator "    --calendar='your_calendar_id@group.calendar.google.com'"
+end
+
+# 必須オプションが指定されているか検証する
+#
+# @param options [Hash] 解析されたオプション
+# @param parser [OptionParser] パーサーインスタンス
+def validate_required_options(options, parser)
+  missing = []
+  missing << "--summary" unless options[:summary]
+  missing << "--start" unless options[:start_time]
+  missing << "--end" unless options[:end_time]
+
+  return if missing.empty?
+
+  warn "Missing required options: #{missing.join(', ')}"
+  warn ""
+  warn parser.help
+  exit 1
+end
+
 # Main execution
 if __FILE__ == $PROGRAM_NAME
   begin
-    if ARGV.length < 3
-      error_output = {
-        error: "Usage: ruby google_calendar_creator.rb 'タイトル' '開始日時' '終了日時'",
-        example: "ruby google_calendar_creator.rb 'ミーティング' '2025-11-24T10:00:00' '2025-11-24T11:00:00'"
-      }
-      puts JSON.generate(error_output)
-      exit 1
-    end
+    options = parse_options
 
-    summary = ARGV[0]
-    start_time = ARGV[1]
-    end_time = ARGV[2]
-
-    creator = GoogleCalendarCreator.new
-    creator.create_event(summary: summary, start_time: start_time, end_time: end_time)
+    creator = GoogleCalendarCreator.new(calendar_id: options[:calendar_id])
+    creator.create_event(
+      summary: options[:summary],
+      start_time: options[:start_time],
+      end_time: options[:end_time]
+    )
   rescue StandardError => e
     puts JSON.generate({ error: e.message })
     exit 1

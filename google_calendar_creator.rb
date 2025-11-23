@@ -33,9 +33,10 @@ class GoogleCalendarCreator
   # @param summary [String] イベントのタイトル
   # @param start_time [String] 開始日時（ISO 8601形式）
   # @param end_time [String] 終了日時（ISO 8601形式）
+  # @param description [String, nil] イベントの説明
   # @return [void]
-  def create_event(summary:, start_time:, end_time:)
-    event = build_event(summary, start_time, end_time)
+  def create_event(summary:, start_time:, end_time:, description: nil)
+    event = build_event(summary, start_time, end_time, description)
     result = @service.insert_event(@calendar_id, event)
 
     display_result(result)
@@ -101,10 +102,12 @@ class GoogleCalendarCreator
   # @param summary [String] イベントのタイトル
   # @param start_time [String] 開始日時
   # @param end_time [String] 終了日時
+  # @param description [String, nil] イベントの説明
   # @return [Google::Apis::CalendarV3::Event] イベントオブジェクト
-  def build_event(summary, start_time, end_time)
+  def build_event(summary, start_time, end_time, description)
     Google::Apis::CalendarV3::Event.new(
       summary: summary,
+      description: description,
       start: build_event_datetime(start_time),
       end: build_event_datetime(end_time)
     )
@@ -165,6 +168,7 @@ class GoogleCalendarCreator
       event: {
         id: event.id,
         summary: event.summary,
+        description: event.description,
         start: format_event_time(event.start),
         end: format_event_time(event.end),
         html_link: event.html_link
@@ -225,6 +229,7 @@ def define_optional_options(opts, options)
   opts.separator ""
   opts.separator "Optional:"
 
+  opts.on("--description=DESCRIPTION", "Event description") { |v| options[:description] = v }
   opts.on("--calendar=CALENDAR_ID", "Calendar ID (default: GOOGLE_CALENDAR_ID env var)") do |v|
     options[:calendar_id] = v
   end
@@ -269,7 +274,8 @@ if __FILE__ == $PROGRAM_NAME
     creator.create_event(
       summary: options[:summary],
       start_time: options[:start_time],
-      end_time: options[:end_time]
+      end_time: options[:end_time],
+      description: options[:description]
     )
   rescue StandardError => e
     puts JSON.generate({ error: e.message })

@@ -1,13 +1,23 @@
 # google-calendar-fetcher-ruby
 
-A Ruby script to fetch Google Calendar events for a specific date using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
+A Ruby toolkit to fetch and create Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
 
 ## Features
 
+### Event Fetcher
 - Fetch Google Calendar events for a specified date
+- Support for multiple calendars
 - **JSON output format** (optimized for AI agents and programmatic processing)
 - Includes calendar metadata (name, timezone, description)
 - Includes event details (summary, description, timestamps)
+
+### Event Creator
+- Create events in Google Calendar
+- Support for timed events and all-day events
+- Optional event description
+- Specify target calendar via command line or environment variable
+
+### Common Features
 - Uses Google Calendar API v3
 - OAuth 2.0 authentication (Google's recommended method)
 - Secure token-based authentication with automatic refresh
@@ -15,7 +25,7 @@ A Ruby script to fetch Google Calendar events for a specific date using OAuth 2.
 
 ## Prerequisites
 
-- Ruby 2.7 or higher
+- Ruby 3.4.0 or higher
 - [mise](https://mise.jdx.dev/) (for environment variable management)
 - Google Cloud Project with Calendar API enabled
 - Google account with calendar access
@@ -89,6 +99,8 @@ GOOGLE_CLIENT_SECRET = "your-client-secret"
 
 ### 4. Initial Authentication
 
+#### For Event Fetcher (Read-only access)
+
 Run the authentication script to authenticate and save your credentials:
 
 ```bash
@@ -100,35 +112,48 @@ This will:
 2. Ask you to sign in and grant calendar read permission
 3. Save the refresh token to `~/.credentials/calendar-fetcher-token.yaml`
 
+#### For Event Creator (Write access)
+
+Run the creator authentication script:
+
+```bash
+mise exec -- ruby google_calendar_creator_authenticator.rb
+```
+
+This will:
+1. Open your default browser with Google's authorization page
+2. Ask you to sign in and grant calendar write permission
+3. Save the refresh token to `~/.credentials/calendar-creator-token.yaml`
+
 **Important:** Add your email to "Test users" in the OAuth consent screen if you see an "Access blocked" error.
 
-**Note:** You only need to do this once. The token will be automatically refreshed when needed.
+**Note:** You only need to do this once per tool. The token will be automatically refreshed when needed.
 
 ## Usage
 
+### Event Fetcher
+
 After completing the setup, run the script with a date argument:
 
-### Specific Date
+#### Specific Date
 
 ```bash
 mise exec -- ruby google_calendar_fetcher.rb 2025-01-15
 ```
 
-### Relative Dates
+#### Relative Dates
 
 ```bash
 # Yesterday
 mise exec -- ruby google_calendar_fetcher.rb y
 mise exec -- ruby google_calendar_fetcher.rb yesterday
-mise exec -- ruby google_calendar_fetcher.rb 昨日
 
 # Tomorrow
 mise exec -- ruby google_calendar_fetcher.rb t
 mise exec -- ruby google_calendar_fetcher.rb tomorrow
-mise exec -- ruby google_calendar_fetcher.rb 明日
 ```
 
-### Today (Default)
+#### Today (Default)
 
 Run without arguments to fetch today's events:
 
@@ -136,11 +161,63 @@ Run without arguments to fetch today's events:
 mise exec -- ruby google_calendar_fetcher.rb
 ```
 
+### Event Creator
+
+Create events using command-line options:
+
+#### Timed Event
+
+```bash
+mise exec -- ruby google_calendar_creator.rb \
+  --summary='Team Meeting' \
+  --start='2025-01-15T10:00:00' \
+  --end='2025-01-15T11:00:00'
+```
+
+#### Timed Event with Description
+
+```bash
+mise exec -- ruby google_calendar_creator.rb \
+  --summary='Team Meeting' \
+  --start='2025-01-15T10:00:00' \
+  --end='2025-01-15T11:00:00' \
+  --description='Weekly team sync to discuss project progress'
+```
+
+#### All-day Event
+
+```bash
+mise exec -- ruby google_calendar_creator.rb \
+  --summary='Company Holiday' \
+  --start='2025-01-15' \
+  --end='2025-01-16'
+```
+
+#### Specify Calendar
+
+```bash
+mise exec -- ruby google_calendar_creator.rb \
+  --summary='Meeting' \
+  --start='2025-01-15T10:00:00' \
+  --end='2025-01-15T11:00:00' \
+  --calendar='your-calendar-id@group.calendar.google.com'
+```
+
+#### Command-line Options
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--summary` | Yes | Event title |
+| `--start` | Yes | Start datetime (e.g., `2025-01-15T10:00:00`) or date for all-day events (e.g., `2025-01-15`) |
+| `--end` | Yes | End datetime or date (exclusive for all-day events) |
+| `--description` | No | Event description |
+| `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
+
 ## Output
 
-The script outputs **structured JSON format** optimized for AI agents and programmatic processing.
+Both scripts output **structured JSON format** optimized for AI agents and programmatic processing.
 
-### JSON Structure
+### Fetcher JSON Structure
 
 The output structure mirrors Google Calendar API's event format for consistency. When multiple calendars are configured, events are grouped by calendar:
 
@@ -194,13 +271,39 @@ The output structure mirrors Google Calendar API's event format for consistency.
 }
 ```
 
+### Creator JSON Structure
+
+```json
+{
+  "success": true,
+  "event": {
+    "id": "event_unique_id",
+    "summary": "Team Meeting",
+    "description": "Weekly team sync",
+    "start": {
+      "date_time": "2025-01-15T10:00:00+09:00",
+      "date": null
+    },
+    "end": {
+      "date_time": "2025-01-15T11:00:00+09:00",
+      "date": null
+    },
+    "html_link": "https://www.google.com/calendar/event?eid=..."
+  }
+}
+```
+
 ### Output Fields
 
-**Top-level fields:**
+**Top-level fields (Fetcher):**
 - `date`: The date for which events were fetched (YYYY-MM-DD format)
 - `calendars`: Array of calendar objects with their events
 
-**Calendar metadata (per calendar):**
+**Top-level fields (Creator):**
+- `success`: Boolean indicating if the event was created successfully
+- `event`: The created event object
+
+**Calendar metadata (per calendar, Fetcher only):**
 - `id`: Calendar identifier
 - `summary`: Calendar name (uses custom name if set via CalendarList API)
 - `description`: Calendar description (null if not set)
@@ -218,6 +321,7 @@ The output structure mirrors Google Calendar API's event format for consistency.
 - `end`: Event end time object
   - `date_time`: ISO 8601 timestamp with timezone (for timed events)
   - `date`: Date in YYYY-MM-DD format (for all-day events, **exclusive**)
+- `html_link`: URL to view the event in Google Calendar (Creator only)
 
 **Important:**
 - For all-day events, exactly one of `date_time` or `date` will be set, the other will be `null`.
@@ -303,15 +407,21 @@ Add your email address to "Test users" in the OAuth consent screen:
 5. Save and try authenticating again
 
 ### "No credentials found" error
-Run `mise exec -- ruby google_calendar_authenticator.rb` to authenticate first.
+Run the appropriate authentication script first:
+- For Fetcher: `mise exec -- ruby google_calendar_authenticator.rb`
+- For Creator: `mise exec -- ruby google_calendar_creator_authenticator.rb`
 
 ### "Token file not found" error
-The token file should be at `~/.credentials/calendar-fetcher-token.yaml`. Run `mise exec -- ruby google_calendar_authenticator.rb` to create it.
+The token files should be at:
+- Fetcher: `~/.credentials/calendar-fetcher-token.yaml`
+- Creator: `~/.credentials/calendar-creator-token.yaml`
+
+Run the appropriate authentication script to create them.
 
 ### "Access denied" or permission errors
-1. Make sure you granted calendar read permission during OAuth setup
+1. Make sure you granted the correct permission during OAuth setup (read-only for Fetcher, write for Creator)
 2. Check that your Calendar ID is correct in `mise.local.toml`
-3. Try re-authenticating by deleting `~/.credentials/calendar-fetcher-token.yaml` and running `mise exec -- ruby google_calendar_authenticator.rb` again
+3. Try re-authenticating by deleting the token file and running the authentication script again
 
 ### Browser doesn't open automatically
 Copy the URL from the terminal and paste it into your browser manually.
@@ -331,11 +441,11 @@ Make sure you're using `mise exec --` prefix when running the scripts, or activa
 
 ## How It Works
 
-This script uses **OAuth 2.0** authentication, which is Google's recommended method for accessing user data:
+This toolkit uses **OAuth 2.0** authentication, which is Google's recommended method for accessing user data:
 
-1. **Initial Setup** (`google_calendar_authenticator.rb`):
+1. **Initial Setup** (Authentication scripts):
    - Opens Google's authorization page in your browser
-   - You grant permission for the app to read your calendar
+   - You grant permission for the app to access your calendar (read-only or read-write)
    - Google returns a refresh token that is saved locally
 
 2. **Fetching Events** (`google_calendar_fetcher.rb`):
@@ -346,13 +456,20 @@ This script uses **OAuth 2.0** authentication, which is Google's recommended met
    - Outputs structured JSON with calendar and event information
    - Automatically refreshes the access token when it expires
 
+3. **Creating Events** (`google_calendar_creator.rb`):
+   - Loads credentials from environment variables (via mise)
+   - Uses the saved refresh token to get a short-lived access token
+   - Creates a new event using Events API
+   - Outputs structured JSON with the created event information
+   - Automatically refreshes the access token when it expires
+
 This approach is more secure than service accounts for personal calendars and follows Google's best practices.
 
 ## Use Cases
 
-This script is designed for:
-- **AI agents** that need to access calendar information programmatically
-- **Automation scripts** that process calendar events
+This toolkit is designed for:
+- **AI agents** that need to access and manage calendar information programmatically
+- **Automation scripts** that process or create calendar events
 - **Data analysis** of calendar patterns
 - **Integration** with other tools and services
 

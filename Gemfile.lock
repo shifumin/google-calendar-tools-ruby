@@ -1,8 +1,8 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.8.7)
-      public_suffix (>= 2.0.2, < 7.0)
+    addressable (2.8.8)
+      public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
     base64 (0.3.0)
     declarative (0.0.20)
@@ -28,7 +28,7 @@ GEM
       base64 (~> 0.2)
       faraday (>= 1.0, < 3.a)
     google-logging-utils (0.2.0)
-    googleauth (1.15.1)
+    googleauth (1.16.0)
       faraday (>= 1.0, < 3.a)
       google-cloud-env (~> 2.2)
       google-logging-utils (~> 0.1)
@@ -52,7 +52,7 @@ GEM
       ast (~> 2.4.1)
       racc
     prism (1.6.0)
-    public_suffix (6.0.2)
+    public_suffix (7.0.0)
     racc (1.8.1)
     rainbow (3.1.1)
     regexp_parser (2.11.3)
@@ -93,8 +93,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  google-apis-calendar_v3 (~> 0.38)
-  googleauth (~> 1.8)
+  google-apis-calendar_v3
+  googleauth
   rubocop
 
 RUBY VERSION

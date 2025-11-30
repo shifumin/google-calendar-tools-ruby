@@ -242,7 +242,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
           "end": {
             "date_time": "2025-01-15T11:00:00+09:00",
             "date": null
-          }
+          },
+          "event_type": "default"
         }
       ]
     },
@@ -263,7 +264,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
           "end": {
             "date_time": null,
             "date": "2025-01-16"
-          }
+          },
+          "event_type": "default"
         }
       ]
     }
@@ -321,6 +323,7 @@ The output structure mirrors Google Calendar API's event format for consistency.
 - `end`: Event end time object
   - `date_time`: ISO 8601 timestamp with timezone (for timed events)
   - `date`: Date in YYYY-MM-DD format (for all-day events, **exclusive**)
+- `event_type`: Event type from Google Calendar API (`default`, `outOfOffice`, `focusTime`, `workingLocation`) (Fetcher only)
 - `html_link`: URL to view the event in Google Calendar (Creator only)
 
 **Important:**
@@ -335,7 +338,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
 {
   "summary": "Team Meeting",
   "start": {"date_time": "2025-01-15T10:00:00+09:00", "date": null},
-  "end": {"date_time": "2025-01-15T11:00:00+09:00", "date": null}
+  "end": {"date_time": "2025-01-15T11:00:00+09:00", "date": null},
+  "event_type": "default"
 }
 ```
 
@@ -344,7 +348,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
 {
   "summary": "Holiday",
   "start": {"date_time": null, "date": "2025-01-15"},
-  "end": {"date_time": null, "date": "2025-01-16"}
+  "end": {"date_time": null, "date": "2025-01-16"},
+  "event_type": "default"
 }
 ```
 
@@ -353,7 +358,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
 {
   "summary": "Conference (Jan 14-16)",
   "start": {"date_time": null, "date": "2025-01-14"},
-  "end": {"date_time": null, "date": "2025-01-17"}
+  "end": {"date_time": null, "date": "2025-01-17"},
+  "event_type": "default"
 }
 ```
 
@@ -362,7 +368,8 @@ The output structure mirrors Google Calendar API's event format for consistency.
 {
   "summary": "Weekend Trip",
   "start": {"date_time": "2025-01-14T10:00:00+09:00", "date": null},
-  "end": {"date_time": "2025-01-16T18:00:00+09:00", "date": null}
+  "end": {"date_time": "2025-01-16T18:00:00+09:00", "date": null},
+  "event_type": "default"
 }
 ```
 

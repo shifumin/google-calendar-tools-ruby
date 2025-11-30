@@ -142,7 +142,8 @@ class GoogleCalendarFetcher
       summary: event.summary,
       description: event.description,
       start: format_event_time(event.start),
-      end: format_event_time(event.end)
+      end: format_event_time(event.end),
+      event_type: event.event_type
     }
   end
 

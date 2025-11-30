@@ -1,6 +1,6 @@
 # google-calendar-tools-ruby
 
-A Ruby toolkit to fetch, create, and delete Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
+A Ruby toolkit to fetch, create, update, and delete Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
 
 ## Features
 
@@ -16,6 +16,12 @@ A Ruby toolkit to fetch, create, and delete Google Calendar events using OAuth 2
 - Support for timed events and all-day events
 - Optional event description and location
 - Specify target calendar via command line or environment variable
+
+### Event Updater
+- Update existing events in Google Calendar
+- Modify title, time, description, or location
+- Uses PATCH method (only updates specified fields)
+- Control notification settings for attendees
 
 ### Event Deleter
 - Delete events from Google Calendar
@@ -252,6 +258,48 @@ ruby google_calendar_creator.rb \
 | `--description` | No | Event description |
 | `--location` | No | Event location (e.g., `Tokyo Office 3F Room A`) |
 | `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
+
+### Event Updater
+
+Update existing events using the event ID (obtained from the fetcher):
+
+#### Update Title
+
+```bash
+ruby google_calendar_updater.rb --event-id='abc123xyz' --summary='New Title'
+```
+
+#### Update Time
+
+```bash
+ruby google_calendar_updater.rb --event-id='abc123xyz' \
+  --start='2025-01-15T14:00:00' \
+  --end='2025-01-15T15:00:00'
+```
+
+#### Update Multiple Fields
+
+```bash
+ruby google_calendar_updater.rb --event-id='abc123xyz' \
+  --summary='Updated Meeting' \
+  --location='Room B' \
+  --send-updates=all
+```
+
+#### Command-line Options
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--event-id` | Yes | Event ID to update (get from fetcher output) |
+| `--summary` | No* | New event title |
+| `--start` | No* | New start datetime (e.g., `2025-01-15T14:00:00`) |
+| `--end` | No* | New end datetime |
+| `--description` | No* | New event description |
+| `--location` | No* | New event location |
+| `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
+| `--send-updates` | No | Notification setting: `all`, `externalOnly`, `none` (default: `none`) |
+
+*At least one update field is required.
 
 ### Event Deleter
 

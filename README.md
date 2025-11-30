@@ -1,6 +1,6 @@
 # google-calendar-tools-ruby
 
-A Ruby toolkit to fetch and create Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
+A Ruby toolkit to fetch, create, and delete Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
 
 ## Features
 
@@ -14,7 +14,12 @@ A Ruby toolkit to fetch and create Google Calendar events using OAuth 2.0 authen
 ### Event Creator
 - Create events in Google Calendar
 - Support for timed events and all-day events
-- Optional event description
+- Optional event description and location
+- Specify target calendar via command line or environment variable
+
+### Event Deleter
+- Delete events from Google Calendar
+- Control notification settings for attendees
 - Specify target calendar via command line or environment variable
 
 ### Common Features
@@ -248,9 +253,38 @@ ruby google_calendar_creator.rb \
 | `--location` | No | Event location (e.g., `Tokyo Office 3F Room A`) |
 | `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
 
+### Event Deleter
+
+Delete events using the event ID (obtained from the fetcher):
+
+#### Basic Delete
+
+```bash
+ruby google_calendar_deleter.rb --event-id='abc123xyz'
+```
+
+#### Delete with Notification
+
+```bash
+ruby google_calendar_deleter.rb --event-id='abc123xyz' --send-updates=all
+```
+
+#### Command-line Options
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--event-id` | Yes | Event ID to delete (get from fetcher output) |
+| `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
+| `--send-updates` | No | Notification setting: `all`, `externalOnly`, `none` (default: `none`) |
+
+**send-updates values:**
+- `all`: Notify all attendees
+- `externalOnly`: Notify only non-Google Calendar users
+- `none`: No notifications (default, recommended for batch operations)
+
 ## Output
 
-Both scripts output **structured JSON format** optimized for AI agents and programmatic processing.
+All scripts output **structured JSON format** optimized for AI agents and programmatic processing.
 
 ### Fetcher JSON Structure
 

@@ -34,9 +34,10 @@ class GoogleCalendarCreator
   # @param start_time [String] 開始日時（ISO 8601形式）
   # @param end_time [String] 終了日時（ISO 8601形式）
   # @param description [String, nil] イベントの説明
+  # @param location [String, nil] イベントの場所
   # @return [void]
-  def create_event(summary:, start_time:, end_time:, description: nil)
-    event = build_event(summary, start_time, end_time, description)
+  def create_event(summary:, start_time:, end_time:, description: nil, location: nil)
+    event = build_event(summary, start_time, end_time, description, location)
     result = @service.insert_event(@calendar_id, event)
 
     display_result(result)
@@ -103,11 +104,13 @@ class GoogleCalendarCreator
   # @param start_time [String] 開始日時
   # @param end_time [String] 終了日時
   # @param description [String, nil] イベントの説明
+  # @param location [String, nil] イベントの場所
   # @return [Google::Apis::CalendarV3::Event] イベントオブジェクト
-  def build_event(summary, start_time, end_time, description)
+  def build_event(summary, start_time, end_time, description, location)
     Google::Apis::CalendarV3::Event.new(
       summary: summary,
       description: description,
+      location: location,
       start: build_event_datetime(start_time),
       end: build_event_datetime(end_time)
     )
@@ -169,6 +172,7 @@ class GoogleCalendarCreator
         id: event.id,
         summary: event.summary,
         description: event.description,
+        location: event.location,
         start: format_event_time(event.start),
         end: format_event_time(event.end),
         html_link: event.html_link
@@ -230,6 +234,7 @@ def define_optional_options(opts, options)
   opts.separator "Optional:"
 
   opts.on("--description=DESCRIPTION", "Event description") { |v| options[:description] = v }
+  opts.on("--location=LOCATION", "Event location (e.g., 'Tokyo Office 3F Room A')") { |v| options[:location] = v }
   opts.on("--calendar=CALENDAR_ID", "Calendar ID (default: GOOGLE_CALENDAR_ID env var)") do |v|
     options[:calendar_id] = v
   end
@@ -241,6 +246,10 @@ def define_examples(opts)
   opts.separator "Examples:"
   opts.separator "  ruby google_calendar_creator.rb \\"
   opts.separator "    --summary='Meeting' --start='2025-11-24T10:00:00' --end='2025-11-24T11:00:00'"
+  opts.separator ""
+  opts.separator "  ruby google_calendar_creator.rb \\"
+  opts.separator "    --summary='Meeting' --start='2025-11-24T10:00:00' --end='2025-11-24T11:00:00' \\"
+  opts.separator "    --location='Tokyo Office 3F Room A'"
   opts.separator ""
   opts.separator "  ruby google_calendar_creator.rb \\"
   opts.separator "    --summary='Meeting' --start='2025-11-24T10:00:00' --end='2025-11-24T11:00:00' \\"
@@ -275,7 +284,8 @@ if __FILE__ == $PROGRAM_NAME
       summary: options[:summary],
       start_time: options[:start_time],
       end_time: options[:end_time],
-      description: options[:description]
+      description: options[:description],
+      location: options[:location]
     )
   rescue StandardError => e
     puts JSON.generate({ error: e.message })

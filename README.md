@@ -208,6 +208,16 @@ ruby google_calendar_creator.rb \
   --description='Weekly team sync to discuss project progress'
 ```
 
+#### Timed Event with Location
+
+```bash
+ruby google_calendar_creator.rb \
+  --summary='Team Meeting' \
+  --start='2025-01-15T10:00:00' \
+  --end='2025-01-15T11:00:00' \
+  --location='Tokyo Office 3F Room A'
+```
+
 #### All-day Event
 
 ```bash
@@ -235,6 +245,7 @@ ruby google_calendar_creator.rb \
 | `--start` | Yes | Start datetime (e.g., `2025-01-15T10:00:00`) or date for all-day events (e.g., `2025-01-15`) |
 | `--end` | Yes | End datetime or date (exclusive for all-day events) |
 | `--description` | No | Event description |
+| `--location` | No | Event location (e.g., `Tokyo Office 3F Room A`) |
 | `--calendar` | No | Calendar ID (defaults to `GOOGLE_CALENDAR_ID` env var) |
 
 ## Output
@@ -306,6 +317,7 @@ The output structure mirrors Google Calendar API's event format for consistency.
     "id": "event_unique_id",
     "summary": "Team Meeting",
     "description": "Weekly team sync",
+    "location": "Tokyo Office 3F Room A",
     "start": {
       "date_time": "2025-01-15T10:00:00+09:00",
       "date": null
@@ -341,6 +353,7 @@ The output structure mirrors Google Calendar API's event format for consistency.
 - `id`: Unique event identifier from Google Calendar
 - `summary`: Event title
 - `description`: Event description (null if not set)
+- `location`: Event location (null if not set, Creator only)
 - `start`: Event start time object
   - `date_time`: ISO 8601 timestamp with timezone (for timed events)
   - `date`: Date in YYYY-MM-DD format (for all-day events)

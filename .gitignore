@@ -19,6 +19,9 @@
 # mise - Local environment configuration
 mise.local.toml
 
+# direnv - Local environment configuration
+.envrc
+
 # Google Credentials
 credentials.json
 token.yaml

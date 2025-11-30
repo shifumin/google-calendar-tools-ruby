@@ -21,14 +21,17 @@ A Ruby toolkit to fetch and create Google Calendar events using OAuth 2.0 authen
 - Uses Google Calendar API v3
 - OAuth 2.0 authentication (Google's recommended method)
 - Secure token-based authentication with automatic refresh
-- Environment variable-based configuration with mise
+- Environment variable-based configuration
 
 ## Prerequisites
 
 - Ruby 3.4.0 or higher
-- [mise](https://mise.jdx.dev/) (for environment variable management)
 - Google Cloud Project with Calendar API enabled
 - Google account with calendar access
+- Environment variable management tool (optional, any of the following):
+  - [mise](https://mise.jdx.dev/)
+  - [direnv](https://direnv.net/)
+  - Or simply export variables in your shell
 
 ## Setup
 
@@ -65,25 +68,9 @@ bundle install
 
 ### 3. Environment Variables
 
-Create a `mise.local.toml` file in the project root with your credentials:
+Set the following environment variables using your preferred method:
 
-**Multiple calendars (comma-separated):**
-```toml
-[env]
-GOOGLE_CALENDAR_IDS = "your-email@gmail.com,work-calendar@example.com,another@gmail.com"
-GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "your-client-secret"
-```
-
-**Single calendar (backward compatibility):**
-```toml
-[env]
-GOOGLE_CALENDAR_ID = "your-email@gmail.com"
-GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "your-client-secret"
-```
-
-**Environment variables:**
+**Required environment variables:**
 - `GOOGLE_CALENDAR_IDS`: Multiple calendar IDs, comma-separated (e.g., "cal1@gmail.com,cal2@gmail.com")
 - `GOOGLE_CALENDAR_ID`: Single calendar ID (for backward compatibility)
 - `GOOGLE_CLIENT_ID`: OAuth 2.0 Client ID from Google Cloud Console
@@ -95,7 +82,42 @@ GOOGLE_CLIENT_SECRET = "your-client-secret"
 3. Scroll down to "Integrate calendar"
 4. Copy the "Calendar ID" (usually your email address for the primary calendar)
 
-**Note:** `mise.local.toml` is already in `.gitignore` and will not be committed to version control.
+#### Option A: Using mise (recommended)
+
+Create a `mise.local.toml` file in the project root:
+
+```toml
+[env]
+GOOGLE_CALENDAR_IDS = "your-email@gmail.com,work-calendar@example.com"
+GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "your-client-secret"
+```
+
+Then run scripts with `mise exec -- ruby script.rb` or activate mise in your shell.
+
+#### Option B: Using direnv
+
+Create a `.envrc` file in the project root:
+
+```bash
+export GOOGLE_CALENDAR_IDS="your-email@gmail.com,work-calendar@example.com"
+export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+export GOOGLE_CLIENT_SECRET="your-client-secret"
+```
+
+Then run `direnv allow` to load the variables.
+
+#### Option C: Using shell export
+
+Add to your shell configuration (`~/.bashrc`, `~/.zshrc`, etc.) or run directly:
+
+```bash
+export GOOGLE_CALENDAR_IDS="your-email@gmail.com,work-calendar@example.com"
+export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+export GOOGLE_CLIENT_SECRET="your-client-secret"
+```
+
+**Note:** `mise.local.toml`, `.envrc`, and `.env` are already in `.gitignore` and will not be committed to version control.
 
 ### 4. Initial Authentication
 
@@ -104,7 +126,7 @@ GOOGLE_CLIENT_SECRET = "your-client-secret"
 Run the authentication script to authenticate and save your credentials:
 
 ```bash
-mise exec -- ruby google_calendar_authenticator.rb
+ruby google_calendar_authenticator.rb
 ```
 
 This will:
@@ -117,7 +139,7 @@ This will:
 Run the authentication script with `--mode=readwrite`:
 
 ```bash
-mise exec -- ruby google_calendar_authenticator.rb --mode=readwrite
+ruby google_calendar_authenticator.rb --mode=readwrite
 ```
 
 This will:
@@ -131,6 +153,8 @@ This will:
 
 ## Usage
 
+Make sure environment variables are set before running scripts.
+
 ### Event Fetcher
 
 After completing the setup, run the script with a date argument:
@@ -138,19 +162,19 @@ After completing the setup, run the script with a date argument:
 #### Specific Date
 
 ```bash
-mise exec -- ruby google_calendar_fetcher.rb 2025-01-15
+ruby google_calendar_fetcher.rb 2025-01-15
 ```
 
 #### Relative Dates
 
 ```bash
 # Yesterday
-mise exec -- ruby google_calendar_fetcher.rb y
-mise exec -- ruby google_calendar_fetcher.rb yesterday
+ruby google_calendar_fetcher.rb y
+ruby google_calendar_fetcher.rb yesterday
 
 # Tomorrow
-mise exec -- ruby google_calendar_fetcher.rb t
-mise exec -- ruby google_calendar_fetcher.rb tomorrow
+ruby google_calendar_fetcher.rb t
+ruby google_calendar_fetcher.rb tomorrow
 ```
 
 #### Today (Default)
@@ -158,7 +182,7 @@ mise exec -- ruby google_calendar_fetcher.rb tomorrow
 Run without arguments to fetch today's events:
 
 ```bash
-mise exec -- ruby google_calendar_fetcher.rb
+ruby google_calendar_fetcher.rb
 ```
 
 ### Event Creator
@@ -168,7 +192,7 @@ Create events using command-line options:
 #### Timed Event
 
 ```bash
-mise exec -- ruby google_calendar_creator.rb \
+ruby google_calendar_creator.rb \
   --summary='Team Meeting' \
   --start='2025-01-15T10:00:00' \
   --end='2025-01-15T11:00:00'
@@ -177,7 +201,7 @@ mise exec -- ruby google_calendar_creator.rb \
 #### Timed Event with Description
 
 ```bash
-mise exec -- ruby google_calendar_creator.rb \
+ruby google_calendar_creator.rb \
   --summary='Team Meeting' \
   --start='2025-01-15T10:00:00' \
   --end='2025-01-15T11:00:00' \
@@ -187,7 +211,7 @@ mise exec -- ruby google_calendar_creator.rb \
 #### All-day Event
 
 ```bash
-mise exec -- ruby google_calendar_creator.rb \
+ruby google_calendar_creator.rb \
   --summary='Company Holiday' \
   --start='2025-01-15' \
   --end='2025-01-16'
@@ -196,7 +220,7 @@ mise exec -- ruby google_calendar_creator.rb \
 #### Specify Calendar
 
 ```bash
-mise exec -- ruby google_calendar_creator.rb \
+ruby google_calendar_creator.rb \
   --summary='Meeting' \
   --start='2025-01-15T10:00:00' \
   --end='2025-01-15T11:00:00' \
@@ -379,28 +403,28 @@ You can pipe the output to `jq` for processing:
 
 ```bash
 # Pretty-print JSON
-mise exec -- ruby google_calendar_fetcher.rb | jq
+ruby google_calendar_fetcher.rb | jq
 
 # Get all events from all calendars
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[]'
+ruby google_calendar_fetcher.rb | jq '.calendars[].events[]'
 
 # Extract event titles from all calendars
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[].summary'
+ruby google_calendar_fetcher.rb | jq '.calendars[].events[].summary'
 
 # Get events from a specific calendar
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[] | select(.id == "your-email@gmail.com") | .events'
+ruby google_calendar_fetcher.rb | jq '.calendars[] | select(.id == "your-email@gmail.com") | .events'
 
 # Get all-day events only
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date != null)'
+ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date != null)'
 
 # Get timed events only
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date_time != null)'
+ruby google_calendar_fetcher.rb | jq '.calendars[].events[] | select(.start.date_time != null)'
 
 # Count total events across all calendars
-mise exec -- ruby google_calendar_fetcher.rb | jq '[.calendars[].events[]] | length'
+ruby google_calendar_fetcher.rb | jq '[.calendars[].events[]] | length'
 
 # Count events per calendar
-mise exec -- ruby google_calendar_fetcher.rb | jq '.calendars[] | {calendar: .summary, count: (.events | length)}'
+ruby google_calendar_fetcher.rb | jq '.calendars[] | {calendar: .summary, count: (.events | length)}'
 ```
 
 ## Troubleshooting
@@ -415,8 +439,8 @@ Add your email address to "Test users" in the OAuth consent screen:
 
 ### "No credentials found" error
 Run the appropriate authentication script first:
-- For Fetcher: `mise exec -- ruby google_calendar_authenticator.rb`
-- For Creator: `mise exec -- ruby google_calendar_authenticator.rb --mode=readwrite`
+- For Fetcher: `ruby google_calendar_authenticator.rb`
+- For Creator: `ruby google_calendar_authenticator.rb --mode=readwrite`
 
 ### "Token file not found" error
 The token files should be at:
@@ -434,7 +458,11 @@ Run the appropriate authentication script to create them.
 Copy the URL from the terminal and paste it into your browser manually.
 
 ### Environment variables not loaded
-Make sure you're using `mise exec --` prefix when running the scripts, or activate mise in your shell with `mise activate`.
+Make sure your environment variables are set. Check with:
+```bash
+echo $GOOGLE_CLIENT_ID
+```
+If using mise, run scripts with `mise exec -- ruby script.rb` or activate mise in your shell with `mise activate`.
 
 ## Security Notes
 
@@ -456,7 +484,7 @@ This toolkit uses **OAuth 2.0** authentication, which is Google's recommended me
    - Google returns a refresh token that is saved locally
 
 2. **Fetching Events** (`google_calendar_fetcher.rb`):
-   - Loads credentials from environment variables (via mise)
+   - Loads credentials from environment variables
    - Uses the saved refresh token to get a short-lived access token
    - Fetches calendar metadata using CalendarList API
    - Fetches calendar events for the specified date using Events API
@@ -464,7 +492,7 @@ This toolkit uses **OAuth 2.0** authentication, which is Google's recommended me
    - Automatically refreshes the access token when it expires
 
 3. **Creating Events** (`google_calendar_creator.rb`):
-   - Loads credentials from environment variables (via mise)
+   - Loads credentials from environment variables
    - Uses the saved refresh token to get a short-lived access token
    - Creates a new event using Events API
    - Outputs structured JSON with the created event information

@@ -1,4 +1,4 @@
-# google-calendar-fetcher-ruby
+# google-calendar-tools-ruby
 
 A Ruby toolkit to fetch and create Google Calendar events using OAuth 2.0 authentication. Outputs structured JSON format optimized for AI/LLM consumption.
 

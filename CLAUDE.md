@@ -12,8 +12,7 @@ Google Calendar APIを使ったRubyツール。OAuth 2.0認証でカレンダー
 |---------|------|
 | `google_calendar_fetcher.rb` | イベント取得（読み取り専用） |
 | `google_calendar_creator.rb` | イベント作成 |
-| `google_calendar_authenticator.rb` | Fetcher用OAuth認証 |
-| `google_calendar_creator_authenticator.rb` | Creator用OAuth認証 |
+| `google_calendar_authenticator.rb` | OAuth認証（`--mode`で読み取り専用/書き込み権限を切替） |
 
 ## 技術スタック
 

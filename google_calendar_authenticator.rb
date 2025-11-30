@@ -5,18 +5,37 @@ require "google/apis/calendar_v3"
 require "googleauth"
 require "googleauth/stores/file_token_store"
 require "fileutils"
+require "optparse"
 
 # GoogleCalendarAuthenticator handles the OAuth 2.0 authentication flow for Google Calendar API
+# Supports both read-only (fetcher) and read-write (creator) modes
 class GoogleCalendarAuthenticator
   OOB_URI = "urn:ietf:wg:oauth:2.0:oob"
-  APPLICATION_NAME = "Google Calendar Fetcher"
-  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-fetcher-token.yaml")
-  SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
+  CREDENTIALS_DIR = File.join(Dir.home, ".credentials")
+
+  MODES = {
+    readonly: {
+      scope: Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY,
+      token_file: "calendar-fetcher-token.yaml",
+      app_name: "Google Calendar Fetcher",
+      description: "read-only"
+    },
+    readwrite: {
+      scope: Google::Apis::CalendarV3::AUTH_CALENDAR,
+      token_file: "calendar-creator-token.yaml",
+      app_name: "Google Calendar Creator",
+      description: "read-write"
+    }
+  }.freeze
 
   # Google Calendar認証器を初期化する
   #
+  # @param mode [Symbol] 認証モード（:readonly または :readwrite）
+  # @raise [RuntimeError] 無効なモードが指定された場合
   # @raise [RuntimeError] 必要な環境変数が設定されていない場合
-  def initialize
+  def initialize(mode: :readonly)
+    @mode = mode
+    validate_mode
     validate_environment
     ensure_credentials_directory
   end
@@ -33,8 +52,8 @@ class GoogleCalendarAuthenticator
       ENV.fetch("GOOGLE_CLIENT_SECRET", nil)
     )
 
-    token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
-    authorizer = Google::Auth::UserAuthorizer.new(client_id, SCOPE, token_store)
+    token_store = Google::Auth::Stores::FileTokenStore.new(file: token_path)
+    authorizer = Google::Auth::UserAuthorizer.new(client_id, scope, token_store)
     user_id = "default"
 
     credentials = authorizer.get_credentials(user_id)
@@ -47,6 +66,26 @@ class GoogleCalendarAuthenticator
 
   private
 
+  def config
+    MODES[@mode]
+  end
+
+  def scope
+    config[:scope]
+  end
+
+  def token_path
+    File.join(CREDENTIALS_DIR, config[:token_file])
+  end
+
+  def app_name
+    config[:app_name]
+  end
+
+  def mode_description
+    config[:description]
+  end
+
   # 対話型のOAuth認証フローを実行する
   #
   # 認証URLを含むブラウザウィンドウを開き、ユーザーに認証コードの入力を促し、
@@ -56,7 +95,7 @@ class GoogleCalendarAuthenticator
   # @param user_id [String] 認証情報保存用のユーザー識別子
   # @return [void]
   def perform_authentication(authorizer, user_id)
-    puts "=== Google Calendar OAuth 2.0 Setup ===\n",
+    puts "=== Google Calendar OAuth 2.0 Setup (#{mode_description}) ===\n",
          "Opening authorization URL in your browser...\n",
          "If the browser doesn't open automatically, please copy and paste this URL:"
 
@@ -76,13 +115,21 @@ class GoogleCalendarAuthenticator
 
     puts "\n",
          "✓ Authentication successful!\n",
-         "✓ Token saved to: #{TOKEN_PATH}\n",
-         "You can now run 'ruby google_calendar_fetcher.rb' to fetch your calendar events."
+         "✓ Token saved to: #{token_path}\n",
+         "You can now run 'ruby #{target_script}' to #{target_action}."
+  end
+
+  def target_script
+    @mode == :readonly ? "google_calendar_fetcher.rb" : "google_calendar_creator.rb"
+  end
+
+  def target_action
+    @mode == :readonly ? "fetch your calendar events" : "create calendar events"
   end
 
   def show_already_authenticated_message
-    puts "✓ Already authenticated!\n",
-         "Token file: #{TOKEN_PATH}\n",
+    puts "✓ Already authenticated (#{mode_description})!\n",
+         "Token file: #{token_path}\n",
          "If you want to re-authenticate, delete the token file and run this script again."
   end
 
@@ -104,6 +151,16 @@ class GoogleCalendarAuthenticator
     end
   end
 
+  # モードが有効であることを検証する
+  #
+  # @raise [RuntimeError] 無効なモードが指定された場合
+  # @return [void]
+  def validate_mode
+    return if MODES.key?(@mode)
+
+    raise "Invalid mode: #{@mode}. Valid modes are: #{MODES.keys.join(', ')}"
+  end
+
   # 必要な環境変数が設定されていることを検証する
   #
   # @raise [RuntimeError] GOOGLE_CLIENT_IDまたはGOOGLE_CLIENT_SECRETが設定されていない場合
@@ -114,15 +171,43 @@ class GoogleCalendarAuthenticator
   end
 
   def ensure_credentials_directory
-    credentials_dir = File.dirname(TOKEN_PATH)
-    FileUtils.mkdir_p(credentials_dir) unless File.directory?(credentials_dir)
+    FileUtils.mkdir_p(CREDENTIALS_DIR) unless File.directory?(CREDENTIALS_DIR)
   end
+end
+
+# コマンドライン引数を解析する
+#
+# @return [Symbol] 認証モード
+def parse_mode
+  mode = :readonly
+
+  OptionParser.new do |opts|
+    opts.banner = "Usage: ruby google_calendar_authenticator.rb [options]"
+
+    opts.on("--mode=MODE", "Authentication mode: readonly (default) or readwrite") do |v|
+      mode = v.to_sym
+    end
+
+    opts.on("-h", "--help", "Show this help message") do
+      puts opts
+      exit
+    end
+
+    opts.separator ""
+    opts.separator "Examples:"
+    opts.separator "  ruby google_calendar_authenticator.rb                  # read-only (for fetcher)"
+    opts.separator "  ruby google_calendar_authenticator.rb --mode=readonly  # read-only (for fetcher)"
+    opts.separator "  ruby google_calendar_authenticator.rb --mode=readwrite # read-write (for creator)"
+  end.parse!
+
+  mode
 end
 
 # Main execution
 if __FILE__ == $PROGRAM_NAME
   begin
-    authenticator = GoogleCalendarAuthenticator.new
+    mode = parse_mode
+    authenticator = GoogleCalendarAuthenticator.new(mode: mode)
     authenticator.authenticate
   rescue StandardError => e
     puts "Error: #{e.message}"

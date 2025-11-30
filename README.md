@@ -114,10 +114,10 @@ This will:
 
 #### For Event Creator (Write access)
 
-Run the creator authentication script:
+Run the authentication script with `--mode=readwrite`:
 
 ```bash
-mise exec -- ruby google_calendar_creator_authenticator.rb
+mise exec -- ruby google_calendar_authenticator.rb --mode=readwrite
 ```
 
 This will:
@@ -409,7 +409,7 @@ Add your email address to "Test users" in the OAuth consent screen:
 ### "No credentials found" error
 Run the appropriate authentication script first:
 - For Fetcher: `mise exec -- ruby google_calendar_authenticator.rb`
-- For Creator: `mise exec -- ruby google_calendar_creator_authenticator.rb`
+- For Creator: `mise exec -- ruby google_calendar_authenticator.rb --mode=readwrite`
 
 ### "Token file not found" error
 The token files should be at:

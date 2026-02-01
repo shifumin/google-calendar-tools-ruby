@@ -10,7 +10,7 @@ require "json"
 # GoogleCalendarFetcher fetches events from Google Calendar for a specified date
 class GoogleCalendarFetcher
   APPLICATION_NAME = "Google Calendar Fetcher"
-  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-fetcher-token.yaml")
+  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-readonly-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
   # Google Calendarイベント取得クラスを初期化する

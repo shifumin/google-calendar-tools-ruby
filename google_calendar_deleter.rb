@@ -10,7 +10,7 @@ require "optparse"
 # GoogleCalendarDeleter deletes events from Google Calendar
 class GoogleCalendarDeleter
   APPLICATION_NAME = "Google Calendar Deleter"
-  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-creator-token.yaml")
+  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-readwrite-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
 
   VALID_SEND_UPDATES = %w[all externalOnly none].freeze

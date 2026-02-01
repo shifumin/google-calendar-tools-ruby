@@ -143,7 +143,7 @@ ruby google_calendar_authenticator.rb
 This will:
 1. Open your default browser with Google's authorization page
 2. Ask you to sign in and grant calendar read permission
-3. Save the refresh token to `~/.credentials/calendar-fetcher-token.yaml`
+3. Save the refresh token to `~/.credentials/calendar-readonly-token.yaml`
 
 #### For Event Creator (Write access)
 
@@ -156,7 +156,7 @@ ruby google_calendar_authenticator.rb --mode=readwrite
 This will:
 1. Open your default browser with Google's authorization page
 2. Ask you to sign in and grant calendar write permission
-3. Save the refresh token to `~/.credentials/calendar-creator-token.yaml`
+3. Save the refresh token to `~/.credentials/calendar-readwrite-token.yaml`
 
 **Important:** Add your email to "Test users" in the OAuth consent screen if you see an "Access blocked" error.
 
@@ -539,8 +539,8 @@ Run the appropriate authentication script first:
 
 ### "Token file not found" error
 The token files should be at:
-- Fetcher: `~/.credentials/calendar-fetcher-token.yaml`
-- Creator: `~/.credentials/calendar-creator-token.yaml`
+- Fetcher: `~/.credentials/calendar-readonly-token.yaml`
+- Creator: `~/.credentials/calendar-readwrite-token.yaml`
 
 Run the appropriate authentication script to create them.
 

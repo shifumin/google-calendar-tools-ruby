@@ -29,7 +29,7 @@ token.yaml
 !.vscode/*.json
 
 # OAuth 2.0 token storage (stored in home directory, but listed here for clarity)
-# Note: Tokens are stored at ~/.credentials/calendar-fetcher-token.yaml
+# Note: Tokens are stored at ~/.credentials/calendar-readonly-token.yaml
 .credentials/
 
 # Ignore bundler config

@@ -11,7 +11,7 @@ require "optparse"
 # GoogleCalendarCreator creates events in Google Calendar
 class GoogleCalendarCreator
   APPLICATION_NAME = "Google Calendar Creator"
-  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-creator-token.yaml")
+  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-readwrite-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
 
   # Google Calendarイベント作成クラスを初期化する

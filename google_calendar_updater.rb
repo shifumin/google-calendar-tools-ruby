@@ -11,7 +11,7 @@ require "optparse"
 # GoogleCalendarUpdater updates events in Google Calendar
 class GoogleCalendarUpdater
   APPLICATION_NAME = "Google Calendar Updater"
-  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-creator-token.yaml")
+  TOKEN_PATH = File.join(Dir.home, ".credentials", "calendar-readwrite-token.yaml")
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
 
   VALID_SEND_UPDATES = %w[all externalOnly none].freeze

@@ -99,8 +99,8 @@ mise / direnv / shell export など任意の方法で設定（`mise.local.toml`,
 
 ## 認証トークンの保存先
 
-- Fetcher: `~/.credentials/calendar-fetcher-token.yaml`
-- Creator/Updater/Deleter: `~/.credentials/calendar-creator-token.yaml`
+- Fetcher: `~/.credentials/calendar-readonly-token.yaml`
+- Creator/Updater/Deleter: `~/.credentials/calendar-readwrite-token.yaml`
 
 ## 注意事項
 

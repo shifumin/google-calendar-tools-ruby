@@ -16,13 +16,13 @@ class GoogleCalendarAuthenticator
   MODES = {
     readonly: {
       scope: Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY,
-      token_file: "calendar-fetcher-token.yaml",
+      token_file: "calendar-readonly-token.yaml",
       app_name: "Google Calendar Fetcher",
       description: "read-only"
     },
     readwrite: {
       scope: Google::Apis::CalendarV3::AUTH_CALENDAR,
-      token_file: "calendar-creator-token.yaml",
+      token_file: "calendar-readwrite-token.yaml",
       app_name: "Google Calendar Creator",
       description: "read-write"
     }

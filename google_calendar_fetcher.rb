@@ -206,10 +206,12 @@ if __FILE__ == $PROGRAM_NAME
     date_obj = case (ARGV[0] || "").downcase
                when "y", "yesterday", "昨日"
                  Date.today - 1
+               when "", "today", "今日"
+                 Date.today
                when "t", "tomorrow", "明日"
                  Date.today + 1
-               when ""
-                 Date.today
+               when "明後日"
+                 Date.today + 2
                else
                  Date.parse(ARGV[0])
                end

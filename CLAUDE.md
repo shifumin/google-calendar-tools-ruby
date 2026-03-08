@@ -4,13 +4,14 @@
 
 ## プロジェクト概要
 
-Google Calendar APIを使ったRubyツール。OAuth 2.0認証でカレンダーイベントの取得・作成・更新・削除を行う。
+Google Calendar APIを使ったRubyツール。OAuth 2.0認証でカレンダーイベントの取得・検索・作成・更新・削除を行う。
 
 ### 主要ファイル
 
 | ファイル | 説明 |
 |---------|------|
 | `google_calendar_fetcher.rb` | イベント取得（読み取り専用） |
+| `google_calendar_searcher.rb` | イベント検索（期間指定・キーワード） |
 | `google_calendar_creator.rb` | イベント作成 |
 | `google_calendar_updater.rb` | イベント更新（PATCH方式） |
 | `google_calendar_deleter.rb` | イベント削除 |
@@ -41,6 +42,15 @@ ruby google_calendar_fetcher.rb
 
 # イベント取得（指定日）
 ruby google_calendar_fetcher.rb 2025-01-15
+
+# イベント検索（期間指定）
+ruby google_calendar_searcher.rb --from=2025-01-01 --to=2025-03-31
+
+# イベント検索（直近3ヶ月）
+ruby google_calendar_searcher.rb --last=3months
+
+# イベント検索（キーワード付き）
+ruby google_calendar_searcher.rb --next=2weeks --query='Meeting'
 
 # イベント作成
 ruby google_calendar_creator.rb \
@@ -99,7 +109,7 @@ mise / direnv / shell export など任意の方法で設定（`mise.local.toml`,
 
 ## 認証トークンの保存先
 
-- Fetcher: `~/.credentials/calendar-readonly-token.yaml`
+- Fetcher/Searcher: `~/.credentials/calendar-readonly-token.yaml`
 - Creator/Updater/Deleter: `~/.credentials/calendar-readwrite-token.yaml`
 
 ## 注意事項

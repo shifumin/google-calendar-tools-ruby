@@ -169,19 +169,9 @@ class GoogleCalendarFetcher
   # @return [Hash] 日時情報（date_timeとdate）
   def format_event_time(event_time)
     {
-      date_time: format_datetime(event_time.date_time),
+      date_time: event_time.date_time&.iso8601,
       date: event_time.date
     }
-  end
-
-  # DateTimeオブジェクトをISO 8601形式の文字列に変換する
-  #
-  # @param datetime [DateTime, nil] DateTimeオブジェクト
-  # @return [String, nil] ISO 8601形式の文字列、またはnil
-  def format_datetime(datetime)
-    return nil if datetime.nil?
-
-    datetime.iso8601
   end
 
   # カレンダーデータをJSON形式で出力する

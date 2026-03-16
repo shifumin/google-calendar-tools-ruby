@@ -80,7 +80,9 @@ class GoogleCalendarCreator
     user_id = "default"
     credentials = authorizer.get_credentials(user_id)
 
-    raise "No credentials found. Run 'ruby google_calendar_creator_authenticator.rb' first." if credentials.nil?
+    if credentials.nil?
+      raise "No credentials found. Run 'ruby google_calendar_authenticator.rb --mode=readwrite' first."
+    end
 
     credentials
   end
@@ -95,7 +97,7 @@ class GoogleCalendarCreator
     raise "GOOGLE_CLIENT_SECRET is not set" unless ENV["GOOGLE_CLIENT_SECRET"]
     return if File.exist?(TOKEN_PATH)
 
-    raise "Token file not found. Run 'ruby google_calendar_creator_authenticator.rb' first."
+    raise "Token file not found. Run 'ruby google_calendar_authenticator.rb --mode=readwrite' first."
   end
 
   # イベントオブジェクトを構築する
@@ -151,9 +153,9 @@ class GoogleCalendarCreator
   # @param time_str [String] 日時文字列
   # @return [Google::Apis::CalendarV3::EventDateTime] イベント日時オブジェクト
   def build_timed_datetime(time_str)
-    datetime = DateTime.parse(time_str)
     # タイムゾーンが指定されていない場合はJSTを付与
-    datetime = DateTime.parse("#{time_str}+09:00") unless time_str.match?(/[+-]\d{2}:\d{2}|Z$/)
+    time_with_tz = time_str.match?(/[+-]\d{2}:\d{2}\z|Z\z/) ? time_str : "#{time_str}+09:00"
+    datetime = DateTime.parse(time_with_tz)
 
     Google::Apis::CalendarV3::EventDateTime.new(
       date_time: datetime.rfc3339,

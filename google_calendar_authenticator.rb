@@ -105,7 +105,7 @@ class GoogleCalendarAuthenticator
     open_browser(url)
 
     puts "After authorizing, enter the authorization code:"
-    code = gets.chomp
+    code = gets&.chomp.to_s
 
     authorizer.get_and_store_credentials_from_code(
       user_id: user_id,
@@ -143,11 +143,11 @@ class GoogleCalendarAuthenticator
   def open_browser(url)
     case RUBY_PLATFORM
     when /darwin/
-      system("open '#{url}'")
+      system("open", url)
     when /linux/
-      system("xdg-open '#{url}'")
+      system("xdg-open", url)
     when /mingw|mswin/
-      system("start '#{url}'")
+      system("start", url)
     end
   end
 

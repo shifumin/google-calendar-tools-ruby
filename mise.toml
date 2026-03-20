@@ -1,5 +1,5 @@
 [tools]
-ruby = "4.0.1"
+ruby = "4.0.2"
 
 [env]
 # Multiple calendars (comma-separated)
